@@ -41,6 +41,9 @@ From main repo run
 > go build -o chat
 
 ```
+### How to build rendezvous to windows devices
+GOOS=windows GOARCH=amd64 go build -o chat_windows
+
 ### How to use rendezvous
 Use two different terminal windows to run
 ```
