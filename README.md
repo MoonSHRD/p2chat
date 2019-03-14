@@ -6,6 +6,23 @@ Both examples work with automatic peer discovery
 I've separated mdns from rendezvous point, so you can try both of methods as you  wish
 
 
+
+## What's the main difference and how it could be implemented as MoonShard solution
+
+Simply words, both methods use DHT for peerdiscovery
+
+mDNS using micro-dns service, which means that routing node in the network should support
+this service. Most of modern routers should support it, but not everyone
+(i.g. mDNS will definetly not working at Moscow subways as we learned in fields testing)
+Also not sure mDNS will work from mobile ad-hoc points, but have not tested it this far
+
+Rendezvous point is better solution, and also should decrease battery consumption
+Also it should better connect local chats with cloud (remote) nodes.
+Rendezvous also great when thereare a lot of offline nodes behind NAT and it hard to connect with them
+
+Probably will switch to SONM solution, but as far we are fully accomplish with libp2p stack
+
+
 ## How to build
 require go version >=1.11 , so make sure your `go version` is okay
 
