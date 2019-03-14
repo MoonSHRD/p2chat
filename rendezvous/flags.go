@@ -50,6 +50,7 @@ func ParseFlags() (Config, error) {
 	config := Config{}
 	flag.StringVar(&config.RendezvousString, "rendezvous", "meet me here",
 		"Unique string to identify group of nodes. Share this with your friends to let them connect with you")
+  // This string can be used to identify user application existence. Such method is better then dial everyone and searching by app port
 	flag.Var(&config.BootstrapPeers, "peer", "Adds a peer multiaddress to the bootstrap list")
 	flag.Var(&config.ListenAddresses, "listen", "Adds a multiaddress to the listen list")
 	flag.StringVar(&config.ProtocolID, "pid", "/chat/1.1.0", "Sets a protocol id for stream headers")
