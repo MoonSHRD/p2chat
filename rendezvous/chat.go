@@ -25,6 +25,8 @@ func handleStream(stream inet.Stream) {
 	logger.Info("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
+  // NOTE expirimenting with stream constructions we can possible make distributed video stream like 'Periscope' here.
+  // not sure about it
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
 	go readData(rw)
@@ -122,6 +124,8 @@ func main() {
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
+  // NOTE this variable can be setted by us and be a switch between discovery/battary consumption on mobile devices.
+  // NOTE we don't know how much exactly battery consumption have discovey, but it seems to be in direct correlation. 
 	logger.Debug("Bootstrapping the DHT")
 	if err = kademliaDHT.Bootstrap(ctx); err != nil {
 		panic(err)
@@ -148,7 +152,7 @@ func main() {
 	// This is like telling your friends to meet you at the Eiffel Tower.
   // NOTE - we can use "MoonShard" announcer if we want to explore local chats by application identifier or we can use chat identifier
   // in each case.  Second option can be used for secret (hidden) local chats. First option can be used for discovering/explore every(?) local chats in application
-  
+
 	logger.Info("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
 	discovery.Advertise(ctx, routingDiscovery, config.RendezvousString)
