@@ -1,4 +1,4 @@
-package main
+package p2mobile
 
 import (
 	"bufio"
@@ -71,7 +71,7 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
-func main() {
+func Start() {
 	help := flag.Bool("help", false, "Display Help")
 	cfg := parseFlags()
 
