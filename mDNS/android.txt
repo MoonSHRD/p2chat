@@ -1,0 +1,15 @@
+gomobile bind -target=android github.com/MoonSHRD/p2chat/mDNS/android/p2mobile
+
+
+/**
+
+TODO :
+1. refctor android example for mDNS
+2. build lib for binding and get "*.arr" files
+3. import new package to hello project
+
+
+
+
+
+**/
