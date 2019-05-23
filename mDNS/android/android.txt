@@ -4,9 +4,9 @@ gomobile bind -target=android github.com/libp2p/go-libp2p-examples/chat-with-ren
 /**
 
 TODO :
-1. refctor android example for mDNS
-2. build lib for binding and get "*.arr" files
-3. import new package to hello project
+1. refctor android example for mDNS - done
+2. build lib for binding and get "*.arr" files - done (see artifacts)
+3. import new package to hello project - todo
 
 
 
