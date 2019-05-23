@@ -1,4 +1,4 @@
-gomobile bind -target=android github.com/MoonSHRD/p2chat/mDNS/android/p2mobile
+gomobile bind -target=android github.com/libp2p/go-libp2p-examples/chat-with-rendezvous
 
 
 /**
