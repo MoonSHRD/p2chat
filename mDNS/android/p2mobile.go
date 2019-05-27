@@ -16,14 +16,47 @@ import (
 	"github.com/multiformats/go-multiaddr"
 )
 
+
+type ReadWrite struct {
+	buffer *bufio.ReadWriter
+}
+// // TODO:
+//
+//    this function is invoked in VHODYASHIE calls
+//    at this moment of time we should RETURN some kind of a STREAM ID - which is
+//    apparently is stream inet.Stream variable and put it into some kind of global variable (or a map for multiple connetctions in the future)
+//    (as first I think to return a buffer, but in fact getting stream ID is a better idea)
+//
+//		After we done with it we could have a setted (and returned) global variable with a stream id (and exported getter for it)
+//
+//    Then we get user input from interface and invoke ... new WriteStream exported function which should have get stream ID and user input string as arguments
+//		Then it funcion should itself make a new ReadWriter based on Stream ID and write string to stream, using rw.WriteString
+//
+//		TODO:
+//		1. make a global struct/variable, which would have contain a stream id
+//		2. make a setter(expoter) for this variable inside handleStream, and global exportable getter for this structure
+//		3. make a high level StreamWriter func, which will get streamID and user string from UI (let's start with demo script first) this function also should be exportable
+//		4. refactor a low level writeData to get `rw` and `string` arguments and then invoke rw.WriteString.
+//
+//
+//
+//
+//
+
+
+
 func handleStream(stream inet.Stream) {
 	fmt.Println("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-	go readData(rw)
-	go writeData(rw)
+//	go readData(rw)
+//	go writeData(rw)
+	return &ReadWrite{
+		buffer: &rw,
+	}
+//	return rw;
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
