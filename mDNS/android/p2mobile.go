@@ -118,7 +118,7 @@ func handleStream(stream inet.Stream)  {
 	go readData(rw)
 //	go writeData(rw)
 
-	go writeHandler(rw, "demo stroka")
+	writeHandler(rw, "demo stroka")
 
 /*
 		Ptk = &stream
@@ -160,6 +160,11 @@ func readData(rw *bufio.ReadWriter) {
 // this function should take string as argument and write it to the buffer
 func writeHandler(rw *bufio.ReadWriter, str string)  {
 //	stdReader := bufio.NewReader(os.Stdin)
+		msg:= &str
+
+
+
+
 	for {
 		fmt.Print("> ")
 	//	sendData, err := stdReader.ReadString(&str)
@@ -171,8 +176,8 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 			panic(err)
 		}
 */
-
-sendData := &str
+fmt.Println(msg)
+sendData := msg
 /*
 if err != nil {
 	fmt.Println("Error reading from str")
