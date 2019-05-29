@@ -68,8 +68,11 @@ var Ptk *inet.Stream
 //		TODO:
 //		1. make a global struct/variable, which would have contain a stream id
 //		2. make a setter(expoter) for this variable inside handleStream, and global exportable getter for this structure
-//	*	3. make a high level StreamWriter func, which will get streamID and user string from UI (let's start with demo script first) this function also should be exportable
+//		3. make a high level StreamWriter func, which will get streamID and user string from UI (let's start with demo script first) this function also should be exportable
 //		4. refactor a low level writeData to get `rw` and `string` arguments and then invoke rw.WriteString.
+//	* 5. refactor read Data for android and prepare demoscript working in Simplemdns for android
+// 		6. prepare exported methods (like StreamWriter and StreamReader to get access to write and read functions attached to specifiec stream connection)
+//		
 //
 //
 //
