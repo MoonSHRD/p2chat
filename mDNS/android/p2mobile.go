@@ -16,10 +16,39 @@ import (
 	"github.com/multiformats/go-multiaddr"
 )
 
+//
+//
+//   structs example in golang
+//
+// 	 type MobileLibp2p struct {
+//  node *host.Host
+//  }
+//
+//	func StartLibp2p() *MobileLibp2p {
+//	  host, err := libp2p.New(ctx)
+//	  return &MobileLibp2p{
+//	    node: &host,
+//	  }
+//	}
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
-type ReadWrite struct {
-	buffer *bufio.ReadWriter
+
+
+//
+type StreamApi struct {
+	Potok *inet.Stream
 }
+
+var p StreamApi
+
 // // TODO:
 //
 //    this function is invoked in VHODYASHIE calls
@@ -44,8 +73,14 @@ type ReadWrite struct {
 //
 
 
+/*
+func setStreamApi()  {
 
-func handleStream(stream inet.Stream) {
+}
+*/
+
+
+func handleStream(stream inet.Stream) *StreamApi {
 	fmt.Println("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
@@ -53,8 +88,8 @@ func handleStream(stream inet.Stream) {
 
 //	go readData(rw)
 //	go writeData(rw)
-	return &ReadWrite{
-		buffer: &rw,
+	return &StreamApi{
+		potok: &stream,
 	}
 //	return rw;
 
