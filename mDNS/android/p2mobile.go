@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 //	"github.com/MoonSHRD/p2chat/mDNS/android/flags"
 	"github.com/libp2p/go-libp2p"
@@ -118,7 +119,7 @@ func handleStream(stream inet.Stream)  {
 	go readData(rw)
 //	go writeData(rw)
 
-	writeHandler(rw, "demo stroka")
+	writeHandler(rw, "demo stroka /n")
 
 /*
 		Ptk = &stream
@@ -160,14 +161,17 @@ func readData(rw *bufio.ReadWriter) {
 // this function should take string as argument and write it to the buffer
 func writeHandler(rw *bufio.ReadWriter, str string)  {
 //	stdReader := bufio.NewReader(os.Stdin)
-		msg:= &str
-
+	msg:= &str
+	message := string(*msg)
+	strReader := bufio.NewReader(strings.NewReader(message))
 
 
 
 	for {
 		fmt.Print("> ")
-	//	sendData, err := stdReader.ReadString(&str)
+
+
+		sendData, err := strReader.ReadString('\n')
 
 /*
 		sendData, err := &str
@@ -176,8 +180,10 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 			panic(err)
 		}
 */
-fmt.Println(msg)
-sendData := msg
+
+//fmt.Println(msg)
+//sendData := msg
+
 /*
 if err != nil {
 	fmt.Println("Error reading from str")
@@ -189,7 +195,7 @@ if err != nil {
 
 
 
-		_, err := rw.WriteString(fmt.Sprintf("%s\n", sendData))
+		_, err = rw.WriteString(fmt.Sprintf("%s\n", sendData))
 		if err != nil {
 			fmt.Println("Error writing to buffer")
 			panic(err)
