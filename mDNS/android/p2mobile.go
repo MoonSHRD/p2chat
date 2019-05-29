@@ -82,7 +82,7 @@ func setStreamApi()  {
 }
 */
 
-func getStreamAp() *inet.Stream  {
+func GetStreamAp() *inet.Stream  {
 	return Ptk
 }
 
