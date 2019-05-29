@@ -67,7 +67,7 @@ var Ptk *inet.Stream
 //		TODO:
 //		1. make a global struct/variable, which would have contain a stream id
 //		2. make a setter(expoter) for this variable inside handleStream, and global exportable getter for this structure
-//		3. make a high level StreamWriter func, which will get streamID and user string from UI (let's start with demo script first) this function also should be exportable
+//	*	3. make a high level StreamWriter func, which will get streamID and user string from UI (let's start with demo script first) this function also should be exportable
 //		4. refactor a low level writeData to get `rw` and `string` arguments and then invoke rw.WriteString.
 //
 //
@@ -110,21 +110,32 @@ func handleStream(stream inet.Stream)  {
 	// Create a buffer stream for non blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
+	Ptk = &stream
+	fmt.Println("stream variable:")
+	fmt.Println(Ptk)
+
+
 	go readData(rw)
-	go writeData(rw)
+//	go writeData(rw)
+
+	go writeHandler(rw, "demo stroka")
 
 /*
-		return &p = {
-			Potok: &stream,
-		}
-		*/
 		Ptk = &stream
 		fmt.Println("stream variable:")
 		fmt.Println(Ptk)
-
+*/
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
+
+
+/*
+// this function should be invoked from java side to write messages in one perticular stream
+func StreamWriter()  {
+
+}
+*/
 
 func readData(rw *bufio.ReadWriter) {
 	for {
@@ -145,6 +156,47 @@ func readData(rw *bufio.ReadWriter) {
 
 	}
 }
+
+// this function should take string as argument and write it to the buffer
+func writeHandler(rw *bufio.ReadWriter, str string)  {
+//	stdReader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("> ")
+	//	sendData, err := stdReader.ReadString(&str)
+
+/*
+		sendData, err := &str
+		if err != nil {
+			fmt.Println("Error reading from str")
+			panic(err)
+		}
+*/
+
+sendData := &str
+/*
+if err != nil {
+	fmt.Println("Error reading from str")
+	panic(err)
+}
+*/
+
+
+
+
+
+		_, err := rw.WriteString(fmt.Sprintf("%s\n", sendData))
+		if err != nil {
+			fmt.Println("Error writing to buffer")
+			panic(err)
+		}
+		err = rw.Flush()
+		if err != nil {
+			fmt.Println("Error flushing buffer")
+			panic(err)
+		}
+	}
+}
+
 
 func writeData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
