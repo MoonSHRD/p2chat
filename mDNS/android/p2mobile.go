@@ -47,14 +47,14 @@ type StreamApi struct {
 	Potok *inet.Stream
 }
 
-var p StreamApi
+var P StreamApi
 
 // NOTE:  those far we are using global variable instead of struct or a map. We MUST refactor it to the map or a struct and map, cause we should have a multiple connections
 var Ptk *inet.Stream
 
 // // TODO:
 //
-//    this function is invoked in VHODYASHIE calls
+//    handleStream function is invoked in VHODYASHIE calls
 //    at this moment of time we should RETURN some kind of a STREAM ID - which is
 //    apparently is stream inet.Stream variable and put it into some kind of global variable (or a map for multiple connetctions in the future)
 //    (as first I think to return a buffer, but in fact getting stream ID is a better idea)
@@ -76,15 +76,32 @@ var Ptk *inet.Stream
 //
 
 
-/*
-func setStreamApi()  {
+
+// NOTE:  here works with structures
+// Experimental
+func SetStreamApi(stream inet.Stream)  {
+//	str := &p
+//	str.Potok = &stream
+
+		P.Potok = &stream
 
 }
-*/
 
-func GetStreamAp() *inet.Stream  {
+func GetStreamApi() *inet.Stream {
+	return P.Potok
+}
+
+
+
+// NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
+func GetStreamVar() *inet.Stream  {
 	return Ptk
 }
+func SetStreamVar(stream inet.Stream)  {
+	Ptk = &stream
+}
+
+
 
 
 func handleStream(stream inet.Stream)  {
