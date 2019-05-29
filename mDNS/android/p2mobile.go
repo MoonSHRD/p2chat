@@ -49,6 +49,9 @@ type StreamApi struct {
 
 var p StreamApi
 
+// NOTE:  those far we are using global variable instead of struct or a map. We MUST refactor it to the map or a struct and map, cause we should have a multiple connections
+var Ptk *inet.Stream
+
 // // TODO:
 //
 //    this function is invoked in VHODYASHIE calls
@@ -79,19 +82,29 @@ func setStreamApi()  {
 }
 */
 
+func getStreamAp() *inet.Stream  {
+	return Ptk
+}
 
-func handleStream(stream inet.Stream) *StreamApi {
+
+func handleStream(stream inet.Stream)  {
 	fmt.Println("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-//	go readData(rw)
-//	go writeData(rw)
-	return &StreamApi{
-		potok: &stream,
-	}
-//	return rw;
+	go readData(rw)
+	go writeData(rw)
+
+/*
+		return &p = {
+			Potok: &stream,
+		}
+		*/
+		Ptk = &stream
+		fmt.Println("stream variable:")
+		fmt.Println(Ptk)
+
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
