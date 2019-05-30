@@ -59,6 +59,21 @@ go get -v -d ./...
 go build
 ```
 
+### How to build Android module
+
+``` 
+cd ./mDNS/android/
+gomobile bind -target=android -v
+```
+
+this will generate you `*.aar` and `*.jar`packages for android 
+
+then, open your project in android studio, go File-> ProjectStructure -> modules -> new module -> Import aar/ jar
+and then open `*aar` file.
+
+then you should press 'apply' and also add it as a dependancy to the project. You swicth for dependancy tab, then choose app module itself, then, in right window click add and add p2mobile module as a dependancy.
+
+By default, you will able to invoke any experted functions (those one, which start with **C**apital letter in go code.
 ### How to use mDNS  
 
 Use two different terminal windows to run
