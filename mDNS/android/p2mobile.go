@@ -173,15 +173,16 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 
 // NOTE: endless cycle here
 	for {
-		fmt.Print("> ")
+//		fmt.Print("> ")
 
 
 		sendData, err := strReader.ReadString('\n')
+/*
 		if err != nil {
 			fmt.Println("Error reading from str")
 			panic(err)
 		}
-
+*/
 
 
 /*
