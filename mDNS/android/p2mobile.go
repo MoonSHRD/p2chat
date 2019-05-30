@@ -45,7 +45,7 @@ import (
 
 //
 type StreamApi struct {
-	Potok *inet.Stream
+	Potok inet.Stream
 }
 
 var P StreamApi
@@ -88,21 +88,21 @@ func SetStreamApi(stream inet.Stream)  {
 //	str := &p
 //	str.Potok = &stream
 
-		P.Potok = &stream
+		P.Potok = stream
 
 }
 
-func GetStreamApi() *inet.Stream {
+func GetStreamApi() inet.Stream {
 	return P.Potok
 }
 
 
 
 // NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
-func GetStreamVar() *inet.Stream  {
+func GetStreamPointer() *inet.Stream  {
 	return Ptk
 }
-func SetStreamVar(stream inet.Stream)  {
+func SetStreamPointer(stream inet.Stream)  {
 	Ptk = &stream
 }
 
@@ -119,8 +119,15 @@ func handleStream(stream inet.Stream)  {
 // switch to this new interface.
 // note - it can be multiple interfaces in one device, so, we MUST store some kind of stream ID in sturcture delayed in global mapping
 	Ptk = &stream
-	fmt.Println("stream variable:")
+	fmt.Println("stream pointer:")
 	fmt.Println(Ptk)
+
+	SetStreamApi(stream)
+	fmt.Println(stream)
+
+
+
+
 
 // NOTE: if we type 'go' before those functions they will invoked in endless cicle.
 // it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
