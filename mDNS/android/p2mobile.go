@@ -72,11 +72,12 @@ var Ptk *inet.Stream
 //		4. refactor a low level writeData to get `rw` and `string` arguments and then invoke rw.WriteString.
 //	* 5. refactor read Data for android and prepare demoscript working in Simplemdns for android
 // 		6. prepare exported methods (like StreamWriter and StreamReader to get access to write and read functions attached to specifiec stream connection)
-//		
 //
 //
 //
-//
+// 		NOTE: this version (0.0.1) - works in 'demo script mode' - for better cathing bugs in the main process of work
+//		since v.0.0.2  I will desable this mode, cause I have to start transform this library in stand-alone daemon, which will work with Java at some API
+//		I don't have enough time for making 'full' rest API daemon (which should work with RPC/IPC in future), so right now I will use standart appendix pattern
 //
 
 
@@ -118,17 +119,16 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println("stream variable:")
 	fmt.Println(Ptk)
 
-
+// NOTE: if we type 'go' before those functions they will invoked in endless cicle.
+// it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
 	go readData(rw)
 //	go writeData(rw)
 
+
+// NOTE: this function should be invoked for debug/testing mode.
+// in normal mode this functions should be invoked only from StreamWriter
 	writeHandler(rw, "demo stroka /n")
 
-/*
-		Ptk = &stream
-		fmt.Println("stream variable:")
-		fmt.Println(Ptk)
-*/
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
@@ -163,7 +163,8 @@ func readData(rw *bufio.ReadWriter) {
 
 // this function should take string as argument and write it to the buffer
 func writeHandler(rw *bufio.ReadWriter, str string)  {
-//	stdReader := bufio.NewReader(os.Stdin)
+// NOTE: os.StdIn is for console input
+//	strReader := bufio.NewReader(os.Stdin)
 	msg:= &str
 	message := string(*msg)
 	strReader := bufio.NewReader(strings.NewReader(message))
@@ -175,17 +176,12 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 
 
 		sendData, err := strReader.ReadString('\n')
-
-/*
-		sendData, err := &str
 		if err != nil {
 			fmt.Println("Error reading from str")
 			panic(err)
 		}
-*/
 
-//fmt.Println(msg)
-//sendData := msg
+
 
 /*
 if err != nil {
@@ -274,7 +270,7 @@ func Start() {
 	}
 
 	// Set a function as stream handler.
-	// This function is called when a peer initiates a connection and starts a stream with this peer.
+	// This function is called when a peer initiates a connection and starts a stream with this peer. (Handle INcoming connections)
 	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
@@ -288,7 +284,7 @@ func Start() {
 		fmt.Println("Connection failed:", err)
 	}
 
-	// open a stream, this stream will be handled by handleStream other end
+	// open a stream, this stream will be handled by handleStream other end		(Handle OUTcoming connections)
 	stream, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
 
 	if err != nil {
