@@ -115,6 +115,9 @@ func handleStream(stream inet.Stream)  {
 	// Create a buffer stream for non blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
+// HACK: if we will use &stream pointer instead of stream interface we could get Ptk with pointer to a dinamic variable. Which means if stream interface will change - we will auto
+// switch to this new interface.
+// note - it can be multiple interfaces in one device, so, we MUST store some kind of stream ID in sturcture delayed in global mapping
 	Ptk = &stream
 	fmt.Println("stream variable:")
 	fmt.Println(Ptk)
@@ -127,19 +130,26 @@ func handleStream(stream inet.Stream)  {
 
 // NOTE: this function should be invoked for debug/testing mode.
 // in normal mode this functions should be invoked only from StreamWriter
-	writeHandler(rw, "demo stroka /n")
+//	writeHandler(rw, "demo stroka /n")
 
+//Check
+	StreamWriter(stream, "streamWriter Check")
 
 	// 'stream' will stay open until you close it (or the other side closes it).
 }
 
 
-/*
+
 // this function should be invoked from java side to write messages in one perticular stream
-func StreamWriter()  {
+func StreamWriter(stream inet.Stream, str string)  {
+	//s := &stream
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	msg := &str
+	message := string(*msg)
+	writeHandler(rw, message)
 
 }
-*/
+
 
 func readData(rw *bufio.ReadWriter) {
 // NOTE: endless cycle here
@@ -177,23 +187,13 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 		sendData, err := strReader.ReadString('\n')
 
 
-// HACK: somehow err here is always != nil (even if everything is ok) still don't know what to do here
+// BUG: : somehow err here is always != nil (even if everything is ok) still don't know what to do here
 /*
 		if err != nil {
 			fmt.Println("Error reading from str")
 			panic(err)
 		}
 */
-
-
-/*
-if err != nil {
-	fmt.Println("Error reading from str")
-	panic(err)
-}
-*/
-
-
 
 
 
