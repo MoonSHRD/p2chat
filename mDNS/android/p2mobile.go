@@ -142,6 +142,7 @@ func StreamWriter()  {
 */
 
 func readData(rw *bufio.ReadWriter) {
+// NOTE: endless cycle here
 	for {
 		str, err := rw.ReadString('\n')
 		if err != nil {
@@ -170,7 +171,7 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 	strReader := bufio.NewReader(strings.NewReader(message))
 
 
-
+// NOTE: endless cycle here
 	for {
 		fmt.Print("> ")
 
