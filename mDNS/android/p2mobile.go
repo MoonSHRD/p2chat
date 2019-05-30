@@ -85,8 +85,7 @@ var Ptk *inet.Stream
 // NOTE:  here works with structures
 // Experimental
 func SetStreamApi(stream inet.Stream)  {
-//	str := &p
-//	str.Potok = &stream
+
 
 		P.Potok = stream
 
@@ -113,7 +112,8 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	// NOTE: uncomment it for debug mode
+//	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
 // HACK: if we will use &stream pointer instead of stream interface we could get Ptk with pointer to a dinamic variable. Which means if stream interface will change - we will auto
 // switch to this new interface.
@@ -131,15 +131,12 @@ func handleStream(stream inet.Stream)  {
 
 // NOTE: if we type 'go' before those functions they will invoked in endless cicle.
 // it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
-	go readData(rw)
+//	go readData(rw)
 //	go writeData(rw)
 
 
 // NOTE: this function should be invoked for debug/testing mode.
 // in normal mode this functions should be invoked only from StreamWriter
-//	writeHandler(rw, "demo stroka /n")
-
-//Check
 	StreamWriter(stream, "streamWriter Check")
 
 	// 'stream' will stay open until you close it (or the other side closes it).
@@ -157,8 +154,17 @@ func StreamWriter(stream inet.Stream, str string)  {
 
 }
 
+func StreamReader(stream inet.Stream) string {
+	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	message := readHandler(rw)
+//	msg := string(*message)
+	return message
+}
 
-func readData(rw *bufio.ReadWriter) {
+
+
+
+func readData(rw *bufio.ReadWriter)  {
 // NOTE: endless cycle here
 	for {
 		str, err := rw.ReadString('\n')
@@ -216,6 +222,36 @@ func writeHandler(rw *bufio.ReadWriter, str string)  {
 		}
 	}
 }
+
+
+// this function should take string as argument and write it to the buffer
+func readHandler(rw *bufio.ReadWriter) string {
+
+
+// NOTE: endless cycle here
+	for {
+		str, err := rw.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading from buffer")
+			panic(err)
+		}
+
+		if str == "" {
+			return ""
+		}
+		if str != "\n" {
+			// Green console colour: 	\x1b[32m
+			// Reset console colour: 	\x1b[0m
+			fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+	//		msg := string(*str)
+			return str
+		}
+
+
+
+	}
+}
+
 
 
 func writeData(rw *bufio.ReadWriter) {
