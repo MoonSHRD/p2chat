@@ -48,7 +48,7 @@ type StreamApi struct {
 	Potok inet.Stream
 }
 
-var P StreamApi
+var P *StreamApi
 
 // NOTE:  pointer to the stream, but it is not a stream interface itself.
 // If we want access stream class on Java side we should use exportable structure above
@@ -84,8 +84,9 @@ func SetStreamApi(stream inet.Stream)  {
 
 }
 
-func GetStreamApi() inet.Stream {
-	return P.Potok
+func GetStreamApi() *StreamApi  {
+//	return P.Potok
+		return P
 }
 
 
