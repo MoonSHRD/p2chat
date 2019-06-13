@@ -41,8 +41,13 @@ type StreamApi struct {
 	Potok inet.Stream
 }
 
-// NOTE: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
+// TODO: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
+// NOTE  if we want to access from Java to exactly this variable we need to make type of it as  "var P *StreamApi. " , where "*" means pointer.
+// also if we want to export any function in Java - we should define its type by "*". Pure types can't be exported as is.
+// also, if we actually will make type of P as a pointer, to get this var in android var - it possible will break the rest of the program due
+// "invalid memory address or nil pointer dereference" so instead of this we will use special setters and getters for this variable, instead of direct access.
 var P StreamApi
+
 
 // NOTE:  pointer to the stream, but it is not a stream interface itself.
 // If we want access stream class on Java side we should use exportable structure above
@@ -53,13 +58,9 @@ var Ptk *inet.Stream
 //
 //		TODO:
 //		1. mapping struct for able to multiple connetctions
-//		2. Rest API instead of getters
+//
 //		3. BACKLOG : we can add here functionality of getting topic lists 'around', using mDNS. Perhaps we should just sligtly improve mdns.go from this repo.
-//
-//
-//
-//
-//
+
 
 
 
@@ -75,7 +76,7 @@ func GetStreamApi() *StreamApi  {
 }
 
 
-
+// TODO: useless code (duplicate) need to remove everything with Ptk, made this to test pointers bug
 // NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
 func GetStreamPointer() *inet.Stream  {
 	return Ptk
@@ -111,20 +112,15 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println(Ptk)
 
 	SetStreamApi(stream)
-	fmt.Printf("Checking setting stream")
+	fmt.Println("stream interface:")
+	fmt.Println(stream)
+	fmt.Println("Checking setting stream")
 	stream_struct := GetStreamApi()
-	fmt.Printf("Stream struct",stream_struct)
+	fmt.Println("Returning setted streamApi struct",stream_struct)
 
 
 
 
-/*
-	api, err:= SetStreamApi(stream)
-
-	if err != nil {
-		fmt.Printf("Error setting global stream api", err)
-	}
-*/
 
 
 
@@ -152,7 +148,7 @@ func handleStream(stream inet.Stream)  {
 
 // this function should be invoked from java side to write messages in one perticular stream
 func StreamWriter(potok *StreamApi, str string)  {
-	// TODO: need to replace interface to uid
+	
 
 //	stream := inet.Stream(potok.Potok)
 
