@@ -55,17 +55,6 @@ var Ptk *inet.Stream
 
 
 
-//
-//		TODO:
-//		1. mapping struct for able to multiple connetctions
-//
-//		3. BACKLOG : we can add here functionality of getting topic lists 'around', using mDNS. Perhaps we should just sligtly improve mdns.go from this repo.
-
-
-
-
-// NOTE:  here works with structures
-// Experimental
 func SetStreamApi(stream inet.Stream)  {
 		P.Potok = stream
 }
@@ -119,7 +108,10 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println(Ptk)
 
 	SetStreamApi(stream)
+
+
 	// Check
+	// TODO: remove this check in production build
 	fmt.Println("stream interface:")
 	fmt.Println(stream)
 	fmt.Println("Checking setting stream")
@@ -348,7 +340,7 @@ func Start() {
 		SetStreamApi(stream)
 
 
-
+// TODO: remove for production build
 	//	go writeData(rw)
 	//	go readData(rw)
 
