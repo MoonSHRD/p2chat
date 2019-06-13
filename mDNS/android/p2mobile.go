@@ -38,7 +38,7 @@ import (
 
 //
 type StreamApi struct {
-	Potok inet.Stream
+	Potok *inet.Stream
 }
 
 // NOTE: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
@@ -55,16 +55,10 @@ var Ptk *inet.Stream
 //		1. mapping struct for able to multiple connetctions
 //		2. Rest API instead of getters
 //		3. BACKLOG : we can add here functionality of getting topic lists 'around', using mDNS. Perhaps we should just sligtly improve mdns.go from this repo.
-//		4. Add README, build instructions, live/debug instructions, 'how it work section', .gitignore for builds itself
 //
 //
 //
-// 		NOTE:  branch 'android_stream_api' (0.0.1) - works in  debug mode - for better cathing bugs in the main process of work
-//		since v.0.0.2  I will desable this mode, cause I have to start transform this library in stand-alone daemon, which will work with Java at some API
-//		I don't have enough time for making 'full' rest API daemon (which should work with RPC/IPC in future), so right now I will use standart appendix pattern
 //
-//
-//				normal live api mode is in branch 'live_stream_api'
 //
 
 
@@ -72,10 +66,7 @@ var Ptk *inet.Stream
 // NOTE:  here works with structures
 // Experimental
 func SetStreamApi(stream inet.Stream)  {
-
-
-		P.Potok = stream
-
+		P.Potok = &stream
 }
 
 func GetStreamApi() *StreamApi  {
@@ -92,6 +83,7 @@ func GetStreamPointer() *inet.Stream  {
 func SetStreamPointer(stream inet.Stream)  {
 	Ptk = &stream
 }
+
 
 // NOTE:
 //    handleStream function is invoked in VHODYASHIE calls
@@ -119,13 +111,31 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println(Ptk)
 
 	SetStreamApi(stream)
-	fmt.Println(stream)
+	fmt.Printf("Checking setting stream")
+	stream_struct := GetStreamApi()
+	fmt.Printf("Stream struct",stream_struct)
+
+
+
+
+/*
+	api, err:= SetStreamApi(stream)
+
+	if err != nil {
+		fmt.Printf("Error setting global stream api", err)
+	}
+*/
+
+
+
+//	SetStreamApi(stream)
+//	fmt.Println(stream)
 
 
 
 
 
-// NOTE: if we type 'go' before those functions they will invoked in endless cicle.
+// NOTE:
 // it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
 //	go readData(rw)
 //	go writeData(rw)
@@ -143,7 +153,10 @@ func handleStream(stream inet.Stream)  {
 // this function should be invoked from java side to write messages in one perticular stream
 func StreamWriter(potok *StreamApi, str string)  {
 	// TODO: need to replace interface to uid
-	stream := potok.Potok
+
+	stream := inet.Stream(potok.Potok)
+
+//	stream := potok.Potok
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	msg := &str
@@ -336,10 +349,16 @@ func Start() {
 	if err != nil {
 		fmt.Println("Stream open failed", err)
 	} else {
-		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	//	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-		go writeData(rw)
-		go readData(rw)
+
+		SetStreamApi(stream)
+
+
+
+	//	go writeData(rw)
+	//	go readData(rw)
+
 		fmt.Println("Connected to:", peer)
 	}
 
