@@ -69,9 +69,9 @@ func SetStreamApi(stream inet.Stream)  {
 		P.Potok = stream
 }
 
-func GetStreamApi() StreamApi  {
+func GetStreamApi() *StreamApi  {
 //	return P.Potok
-		return P
+		return &P
 }
 
 
