@@ -125,7 +125,7 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println("Checking setting stream")
 	stream_struct := GetStreamApi()
 	fmt.Println("Returning setted streamApi struct",stream_struct)
-	stream_interface := GetStreamApiInterface(P)
+	stream_interface := GetStreamApiInterface(stream_struct)
 	fmt.Println("Returning setted streamApi interface",stream_interface)
 
 // NOTE:
