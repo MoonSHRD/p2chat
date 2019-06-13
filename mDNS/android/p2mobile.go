@@ -41,8 +41,13 @@ type StreamApi struct {
 	Potok inet.Stream
 }
 
-// NOTE: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
-var P *StreamApi
+// TODO: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
+// NOTE  if we want to access from Java to exactly this variable we need to make type of it as  "var P *StreamApi. " , where "*" means pointer.
+// also if we want to export any function in Java - we should define its type by "*". Pure types can't be exported as is.
+// also, if we actually will make type of P as a pointer, to get this var in android var - it possible will break the rest of the program due
+// "invalid memory address or nil pointer dereference" so instead of this we will use special setters and getters for this variable, instead of direct access.
+var P StreamApi
+
 
 // NOTE:  pointer to the stream, but it is not a stream interface itself.
 // If we want access stream class on Java side we should use exportable structure above
@@ -50,41 +55,24 @@ var Ptk *inet.Stream
 
 
 
-//
-//		TODO:
-//		1. mapping struct for able to multiple connetctions
-//		2. Rest API instead of getters
-//		3. BACKLOG : we can add here functionality of getting topic lists 'around', using mDNS. Perhaps we should just sligtly improve mdns.go from this repo.
-//		4. Add README, build instructions, live/debug instructions, 'how it work section', .gitignore for builds itself
-//
-//
-//
-// 		NOTE:  branch 'android_stream_api' (0.0.1) - works in  debug mode - for better cathing bugs in the main process of work
-//		since v.0.0.2  I will desable this mode, cause I have to start transform this library in stand-alone daemon, which will work with Java at some API
-//		I don't have enough time for making 'full' rest API daemon (which should work with RPC/IPC in future), so right now I will use standart appendix pattern
-//
-//
-//				normal live api mode is in branch 'live_stream_api'
-//
-
-
-
-// NOTE:  here works with structures
-// Experimental
 func SetStreamApi(stream inet.Stream)  {
-
-
 		P.Potok = stream
-
 }
 
+// returning struct itself
 func GetStreamApi() *StreamApi  {
 //	return P.Potok
-		return P
+		return &P
+}
+
+// returning interface from a struct
+func GetStreamApiInterface(ApiStruct *StreamApi) inet.Stream {
+	streamInterface := ApiStruct.Potok
+	return streamInterface
 }
 
 
-
+// TODO: useless code (duplicate) need to remove everything with Ptk, made this to test pointers bug
 // NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
 func GetStreamPointer() *inet.Stream  {
 	return Ptk
@@ -92,6 +80,7 @@ func GetStreamPointer() *inet.Stream  {
 func SetStreamPointer(stream inet.Stream)  {
 	Ptk = &stream
 }
+
 
 // NOTE:
 //    handleStream function is invoked in VHODYASHIE calls
@@ -119,13 +108,19 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println(Ptk)
 
 	SetStreamApi(stream)
+
+
+	// Check
+	// TODO: remove this check in production build
+	fmt.Println("stream interface:")
 	fmt.Println(stream)
+	fmt.Println("Checking setting stream")
+	stream_struct := GetStreamApi()
+	fmt.Println("Returning setted streamApi struct",stream_struct)
+	stream_interface := GetStreamApiInterface(stream_struct)
+	fmt.Println("Returning setted streamApi interface",stream_interface)
 
-
-
-
-
-// NOTE: if we type 'go' before those functions they will invoked in endless cicle.
+// NOTE:
 // it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
 //	go readData(rw)
 //	go writeData(rw)
@@ -142,7 +137,10 @@ func handleStream(stream inet.Stream)  {
 
 // this function should be invoked from java side to write messages in one perticular stream
 func StreamWriter(potok *StreamApi, str string)  {
-	// TODO: need to replace interface to uid
+
+
+//	stream := inet.Stream(potok.Potok)
+
 	stream := potok.Potok
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
@@ -185,6 +183,7 @@ func readData(rw *bufio.ReadWriter)  {
 }
 
 // this function should take string as argument and write it to the buffer
+// NOTE - this function is duplicate of writeData function. difference is in method of input (android doesn't have stdIn)
 func writeHandler(rw *bufio.ReadWriter, str string)  {
 // NOTE: os.StdIn is for console input
 //	strReader := bufio.NewReader(os.Stdin)
@@ -252,7 +251,7 @@ func readHandler(rw *bufio.ReadWriter) string {
 }
 
 
-
+// NOTE: if this function will invoke from android side - app will crash.
 func writeData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
 
@@ -335,10 +334,16 @@ func Start() {
 	if err != nil {
 		fmt.Println("Stream open failed", err)
 	} else {
-		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+	//	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-		go writeData(rw)
-		go readData(rw)
+
+		SetStreamApi(stream)
+
+
+// TODO: remove for production build
+	//	go writeData(rw)
+	//	go readData(rw)
+
 		fmt.Println("Connected to:", peer)
 	}
 
