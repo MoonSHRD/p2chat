@@ -38,11 +38,11 @@ import (
 
 //
 type StreamApi struct {
-	Potok *inet.Stream
+	Potok inet.Stream
 }
 
 // NOTE: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
-var P *StreamApi
+var P StreamApi
 
 // NOTE:  pointer to the stream, but it is not a stream interface itself.
 // If we want access stream class on Java side we should use exportable structure above
@@ -66,10 +66,10 @@ var Ptk *inet.Stream
 // NOTE:  here works with structures
 // Experimental
 func SetStreamApi(stream inet.Stream)  {
-		P.Potok = &stream
+		P.Potok = stream
 }
 
-func GetStreamApi() *StreamApi  {
+func GetStreamApi() StreamApi  {
 //	return P.Potok
 		return P
 }
@@ -154,9 +154,9 @@ func handleStream(stream inet.Stream)  {
 func StreamWriter(potok *StreamApi, str string)  {
 	// TODO: need to replace interface to uid
 
-	stream := inet.Stream(potok.Potok)
+//	stream := inet.Stream(potok.Potok)
 
-//	stream := potok.Potok
+	stream := potok.Potok
 
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 	msg := &str
