@@ -70,9 +70,16 @@ func SetStreamApi(stream inet.Stream)  {
 		P.Potok = stream
 }
 
+// returning struct itself
 func GetStreamApi() *StreamApi  {
 //	return P.Potok
 		return &P
+}
+
+// returning interface from a struct
+func GetStreamApiInterface(ApiStruct *StreamApi) inet.Stream {
+	streamInterface := ApiStruct.Potok
+	return streamInterface
 }
 
 
@@ -112,24 +119,14 @@ func handleStream(stream inet.Stream)  {
 	fmt.Println(Ptk)
 
 	SetStreamApi(stream)
+	// Check
 	fmt.Println("stream interface:")
 	fmt.Println(stream)
 	fmt.Println("Checking setting stream")
 	stream_struct := GetStreamApi()
 	fmt.Println("Returning setted streamApi struct",stream_struct)
-
-
-
-
-
-
-
-//	SetStreamApi(stream)
-//	fmt.Println(stream)
-
-
-
-
+	stream_interface := GetStreamApiInterface(P)
+	fmt.Println("Returning setted streamApi interface",stream_interface)
 
 // NOTE:
 // it is a good solution for desktop/console mode, when we whait for user input, but in android (where is no stdIn or direct console imput) we should avoid such invokation
@@ -148,7 +145,7 @@ func handleStream(stream inet.Stream)  {
 
 // this function should be invoked from java side to write messages in one perticular stream
 func StreamWriter(potok *StreamApi, str string)  {
-	
+
 
 //	stream := inet.Stream(potok.Potok)
 
