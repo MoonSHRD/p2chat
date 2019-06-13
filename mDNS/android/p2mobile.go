@@ -185,6 +185,7 @@ func readData(rw *bufio.ReadWriter)  {
 }
 
 // this function should take string as argument and write it to the buffer
+// NOTE - this function is duplicate of writeData function. difference is in method of input (android doesn't have stdIn)
 func writeHandler(rw *bufio.ReadWriter, str string)  {
 // NOTE: os.StdIn is for console input
 //	strReader := bufio.NewReader(os.Stdin)
@@ -252,7 +253,7 @@ func readHandler(rw *bufio.ReadWriter) string {
 }
 
 
-
+// NOTE: if this function will invoke from android side - app will crash.
 func writeData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
 
