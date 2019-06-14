@@ -137,25 +137,24 @@ func handleStream(stream inet.Stream)  {
 
 // this function should be invoked from java side to write messages in one perticular stream
 func StreamWriter(potok *StreamApi, str string)  {
-
-
-//	stream := inet.Stream(potok.Potok)
-
 	stream := potok.Potok
-
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	msg := &str
-	message := string(*msg)
-	writeHandler(rw, message)
-
+    if stream != nil {
+        rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+        msg := &str
+        message := string(*msg)
+        writeHandler(rw, message)
+    }
 }
 
 func StreamReader(potok *StreamApi) string {
 	stream := potok.Potok
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-	message := readHandler(rw)
-//	msg := string(*message)
-	return message
+	if stream != nil {
+        rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
+        message := readHandler(rw)
+        //	msg := string(*message)
+        return message
+    }
+	return ""
 }
 
 
