@@ -2,3 +2,4 @@
 ./rendezvous/chat
 *.jar
 *.aar
+/.idea
