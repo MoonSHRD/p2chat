@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"crypto/rand"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -251,17 +250,9 @@ func writeData(rw *bufio.ReadWriter) {
 }
 
 func Start() {
-	help := flag.Bool("help", false, "Display Help")
-	cfg := parseFlags()
+	cfg := GetConfig()
 
-	if *help {
-		fmt.Printf("Simple example for peer discovery using mDNS. mDNS is great when you have multiple peers in local LAN.")
-		fmt.Printf("Usage: \n   Run './chat-with-mdns'\nor Run './chat-with-mdns -host [host] -port [port] -rendezvous [string] -pid [proto ID]'\n")
-
-		os.Exit(0)
-	}
-
-	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
+	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
 	ctx := context.Background()
 	r := rand.Reader
@@ -273,7 +264,7 @@ func Start() {
 	}
 
 	// 0.0.0.0 will listen on any interface device.
-	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", cfg.listenHost, cfg.listenPort))
+	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", cfg.ListenHost, cfg.ListenPort))
 
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
@@ -291,7 +282,7 @@ func Start() {
 	// This function is called when a peer initiates a connection and starts a stream with this peer. (Handle INcoming connections)
 	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
+	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID().Pretty())
 
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
