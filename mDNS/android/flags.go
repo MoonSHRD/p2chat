@@ -1,24 +1,19 @@
 package p2mobile
 
-import (
-	"flag"
-)
-
-type config struct {
-	RendezvousString string
-	ProtocolID       string
-	listenHost       string
-	listenPort       int
+type Config struct {
+	RendezvousString string // Unique string to identify group of nodes. Share this with your friends to let them connect with you
+	ProtocolID       string // Sets a protocol id for stream headers
+	ListenHost       string // The bootstrap node host listen address
+	ListenPort       int    // Node listen port
 }
 
-func parseFlags() *config {
-	c := &config{}
+func GetConfig() *Config {
+	c := &Config{}
 
-	flag.StringVar(&c.RendezvousString, "rendezvous", "meetme", "Unique string to identify group of nodes. Share this with your friends to let them connect with you")
-	flag.StringVar(&c.listenHost, "host", "0.0.0.0", "The bootstrap node host listen address\n")
-	flag.StringVar(&c.ProtocolID, "pid", "/chat/1.1.0", "Sets a protocol id for stream headers")
-	flag.IntVar(&c.listenPort, "port", 4001, "node listen port")
+	c.RendezvousString = "meetme"
+	c.ProtocolID = "/chat/1.1.0"
+	c.ListenHost = "0.0.0.0"
+	c.ListenPort = 4001
 
-	flag.Parse()
 	return c
 }
