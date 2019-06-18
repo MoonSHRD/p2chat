@@ -142,24 +142,6 @@ Finally we open stream to the peers we found, as we find them
 	}
 ```
 
-### How to build mDNS module for android and import it to Android Studio
-
-go to the `./android` dir, then open terminal and type
-
-` gomobile bind -target=android -v -d `
-this wil generate `*aar` and `*jar` files, which you can use in your android studio project
-
-When you want to import it to android IDE you should go to `File -> ProjectStructure -> Modules -> "+" add new module -> import *aar/*jar` and import your module. 
-
-Then you go to `File -> ProjectStructure -> Dependencies` , select `app` and then in the right window add `p2mobile` as a dependency for your app. After it's done, gradle will auto generate everything you need.
-
-## What types and functions will be accesable from p2chat in my android app?
-
-If you want be able to invoke any go functions from java side, you need to export them via renaming exported functions with Capital Letter like this `Start()`. Note, if you want to export functions with an unusual type, than you need to create a structure in go with this type and export it as well.
-
-From java side just type `import p2mobile.*;` and then invoke like `P2mobile.Start()`
-
-=======
 ### How to build Android module
 
 ``` 
@@ -169,12 +151,16 @@ gomobile bind -target=android -v
 
 this will generate you `*.aar` and `*.jar`packages for android 
 
-then, open your project in android studio, go File-> ProjectStructure -> modules -> new module -> Import aar/ jar
-and then open `*aar` file.
+then, open your project in android studio, go `File -> ProjectStructure -> modules -> new module -> Import aar/jar`
+and then open "*.aar" file.
 
 then you should press 'apply' and also add it as a dependancy to the project. You swicth for dependancy tab, then choose app module itself, then, in right window click add and add p2mobile module as a dependancy.
 
 By default, you will able to invoke any experted functions (those one, which start with **C**apital letter in go code.
 
 
+## What types and functions will be accesable from p2chat in my android app?
 
+If you want be able to invoke any go functions from java side, you need to export them via renaming exported functions with Capital Letter like this `Start()`. Note, if you want to export functions with an unusual type, than you need to create a structure in go with this type and export it as well.
+
+From java side just type `import p2mobile.*;` and then invoke like `P2mobile.Start()`
