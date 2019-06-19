@@ -8,25 +8,27 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/libp2p/go-libp2p-discovery"
-	libp2pdht "github.com/libp2p/go-libp2p-kad-dht"
-	inet "github.com/libp2p/go-libp2p-net"
-	"github.com/libp2p/go-libp2p-peerstore"
-	"github.com/libp2p/go-libp2p-protocol"
-	multiaddr "github.com/multiformats/go-multiaddr"
-	logging "github.com/whyrusleeping/go-logging"
+
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/multiformats/go-multiaddr"
+	"github.com/whyrusleeping/go-logging"
+
+	"github.com/ipfs/go-log"
 )
 
 var logger = log.Logger("rendezvous")
 
-func handleStream(stream inet.Stream) {
+func handleStream(stream network.Stream) {
 	logger.Info("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
-  // NOTE expirimenting with stream constructions we can possible make distributed video stream like 'Periscope' here.
-  // not sure about it
+	// NOTE experimenting with stream constructions we can possible make distributed video stream like 'Periscope' here.
+	// not sure about it
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
 	go readData(rw)
@@ -117,15 +119,15 @@ func main() {
 	// client because we want each peer to maintain its own local copy of the
 	// DHT, so that the bootstrapping node of the DHT can go down without
 	// inhibiting future peer discovery.
-	kademliaDHT, err := libp2pdht.New(ctx, host)
+	kademliaDHT, err := dht.New(ctx, host)
 	if err != nil {
 		panic(err)
 	}
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
-  // NOTE this variable can be setted by us and be a switch between discovery/battary consumption on mobile devices.
-  // NOTE we don't know how much exactly battery consumption have discovey, but it seems to be in direct correlation. 
+	// NOTE this variable can be set up by us and be a switch between discovery/battery consumption on mobile devices.
+	// NOTE we don't know how much exactly battery consumption have discovery, but it seems to be in direct correlation.
 	logger.Debug("Bootstrapping the DHT")
 	if err = kademliaDHT.Bootstrap(ctx); err != nil {
 		panic(err)
@@ -135,7 +137,7 @@ func main() {
 	// other nodes in the network.
 	var wg sync.WaitGroup
 	for _, peerAddr := range config.BootstrapPeers {
-		peerinfo, _ := peerstore.InfoFromP2pAddr(peerAddr)
+		peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -150,9 +152,8 @@ func main() {
 
 	// We use a rendezvous point "meet me here" to announce our location.
 	// This is like telling your friends to meet you at the Eiffel Tower.
-  // NOTE - we can use "MoonShard" announcer if we want to explore local chats by application identifier or we can use chat identifier
-  // in each case.  Second option can be used for secret (hidden) local chats. First option can be used for discovering/explore every(?) local chats in application
-
+	// NOTE - we can use "MoonShard" announcer if we want to explore local chats by application identifier or we can use chat identifier
+	// in each case.  Second option can be used for secret (hidden) local chats. First option can be used for discovering/explore every(?) local chats in application
 	logger.Info("Announcing ourselves...")
 	routingDiscovery := discovery.NewRoutingDiscovery(kademliaDHT)
 	discovery.Advertise(ctx, routingDiscovery, config.RendezvousString)
