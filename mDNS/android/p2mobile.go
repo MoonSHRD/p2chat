@@ -255,7 +255,7 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
-func Start(rendezvous string, pid string, listenHost string, port int) {
+func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 	cfg := GetConfig(&rendezvous, &pid, &listenHost, &port)
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
@@ -322,13 +322,28 @@ func Start(rendezvous string, pid string, listenHost string, port int) {
 func GetConfig(rendezvous *string, pid *string, host *string, port *int) *Config {
 	c := &Config{}
 
-	c.RendezvousString = *rendezvous
-	c.ProtocolID = *pid
-	c.ListenHost = *host
-	if !(*port < 0) && !(*port > 65535) {
+	if *rendezvous != "" && rendezvous != nil {
+		c.RendezvousString = *rendezvous
+	} else {
+		c.RendezvousString = "meetme"
+	}
+
+	if *pid != "" && pid != nil {
+		c.ProtocolID = *pid
+	} else {
+		c.ProtocolID = "/chat/1.1.0"
+	}
+
+	if *host != "" && host != nil {
+		c.ListenHost = *host
+	} else {
+		c.ListenHost = "0.0.0.0"
+	}
+
+	if !(*port == 0) && !(port == nil) && !(*port < 0) && !(*port > 65535) {
 		c.ListenPort = *port
 	} else {
-		panic("Port must be greater than 0 and less than 65535")
+		c.ListenPort = 4001
 	}
 
 	return c
