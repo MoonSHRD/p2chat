@@ -340,7 +340,7 @@ func GetConfig(rendezvous *string, pid *string, host *string, port *int) *Config
 		c.ListenHost = "0.0.0.0"
 	}
 
-	if !(*port == 0) && !(port == nil) && !(*port < 0) && !(*port > 65535) {
+	if *port != 0 && port != nil && !(*port < 0) && !(*port > 65535) {
 		c.ListenPort = *port
 	} else {
 		c.ListenPort = 4001
