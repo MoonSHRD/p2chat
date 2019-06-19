@@ -35,6 +35,13 @@ type StreamApi struct {
 	Stream network.Stream
 }
 
+type Config struct {
+	RendezvousString string // Unique string to identify group of nodes. Share this with your friends to let them connect with you
+	ProtocolID       string // Sets a protocol id for stream headers
+	ListenHost       string // The bootstrap node host listen address
+	ListenPort       int    // Node listen port
+}
+
 // TODO: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
 // NOTE  if we want to access from Java to exactly this variable we need to make type of it as  "var P *StreamApi. " , where "*" means pointer.
 // also if we want to export any function in Java - we should define its type by "*". Pure types can't be exported as is.
@@ -248,8 +255,8 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
-func Start() {
-	cfg := GetConfig()
+func Start(rendezvous string, pid string, listenHost string, port int) {
+	cfg := GetConfig(&rendezvous, &pid, &listenHost, &port)
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
@@ -278,7 +285,7 @@ func Start() {
 	}
 
 	// Set a function as stream handler.
-	// This function is called when a peer initiates a connection and starts a stream with this peer. (Handle INcoming connections)
+	// This function is called when a peer initiates a connection and starts a stream with this peer. (Handle incoming connections)
 	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID().Pretty())
@@ -310,4 +317,19 @@ func Start() {
 	}
 
 	select {} //wait here
+}
+
+func GetConfig(rendezvous *string, pid *string, host *string, port *int) *Config {
+	c := &Config{}
+
+	c.RendezvousString = *rendezvous
+	c.ProtocolID = *pid
+	c.ListenHost = *host
+	if !(*port < 0) && !(*port > 65535) {
+		c.ListenPort = *port
+	} else {
+		panic("Port must be greater than 0 and less than 65535")
+	}
+
+	return c
 }
