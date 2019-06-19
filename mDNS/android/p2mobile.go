@@ -5,14 +5,13 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/multiformats/go-multiaddr"
 	"os"
 	"strings"
-	//	"github.com/MoonSHRD/p2chat/mDNS/android/flags"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-crypto"
-	inet "github.com/libp2p/go-libp2p-net"
-	protocol "github.com/libp2p/go-libp2p-protocol"
-	"github.com/multiformats/go-multiaddr"
 )
 
 //
@@ -33,7 +32,7 @@ import (
 
 //
 type StreamApi struct {
-	Potok inet.Stream
+	Stream network.Stream
 }
 
 // TODO: global variable to get access to the stream outside of this daemon. In future should be replaced by mapping
@@ -45,30 +44,30 @@ var P StreamApi
 
 // NOTE:  pointer to the stream, but it is not a stream interface itself.
 // If we want access stream class on Java side we should use exportable structure above
-var Ptk *inet.Stream
+var Ptk *network.Stream
 
-func SetStreamApi(stream inet.Stream) {
-	P.Potok = stream
+func SetStreamApi(stream network.Stream) {
+	P.Stream = stream
 }
 
 // returning struct itself
 func GetStreamApi() *StreamApi {
-	//	return P.Potok
+	//	return P.Stream
 	return &P
 }
 
 // returning interface from a struct
-func GetStreamApiInterface(ApiStruct *StreamApi) inet.Stream {
-	streamInterface := ApiStruct.Potok
+func GetStreamApiInterface(ApiStruct *StreamApi) network.Stream {
+	streamInterface := ApiStruct.Stream
 	return streamInterface
 }
 
 // TODO: useless code (duplicate) need to remove everything with Ptk, made this to test pointers bug
 // NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
-func GetStreamPointer() *inet.Stream {
+func GetStreamPointer() *network.Stream {
 	return Ptk
 }
-func SetStreamPointer(stream inet.Stream) {
+func SetStreamPointer(stream network.Stream) {
 	Ptk = &stream
 }
 
@@ -83,7 +82,7 @@ func SetStreamPointer(stream inet.Stream) {
 //    Then we get user input from interface and invoke ... new WriteStream exported function which should have get stream ID and user input string as arguments
 //		Then it funcion should itself make a new ReadWriter based on Stream ID and write string to stream, using rw.WriteString
 
-func handleStream(stream inet.Stream) {
+func handleStream(stream network.Stream) {
 	fmt.Println("Got a new stream!")
 
 	// Create a buffer stream for non blocking read and write.
@@ -122,8 +121,8 @@ func handleStream(stream inet.Stream) {
 }
 
 // this function should be invoked from java side to write messages in one perticular stream
-func StreamWriter(potok *StreamApi, str string) {
-	stream := potok.Potok
+func StreamWriter(outputStream *StreamApi, str string) {
+	stream := outputStream.Stream
 	if stream != nil {
 		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 		msg := &str
@@ -133,7 +132,7 @@ func StreamWriter(potok *StreamApi, str string) {
 }
 
 func StreamReader(potok *StreamApi) string {
-	stream := potok.Potok
+	stream := potok.Stream
 	if stream != nil {
 		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 		message := readHandler(rw)
