@@ -8,45 +8,34 @@ import (
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	inet "github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
 	"os"
+	"time"
 )
 
-func handleStream(stream inet.Stream) {
-	fmt.Println("Got a new stream!")
-
-	// Create a buffer stream for non blocking read and write.
-	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-	go readData(rw)
-	go writeData(rw)
-
-	// 'stream' will stay open until you close it (or the other side closes it).
-}
-
-func readData(rw *bufio.ReadWriter) {
+func readData(subscription *pubsub.Subscription) {
 	for {
-		str, err := rw.ReadString('\n')
+		msg, err := subscription.Next(context.Background())
 		if err != nil {
 			fmt.Println("Error reading from buffer")
 			panic(err)
 		}
 
-		if str == "" {
+		if string(msg.Data) == "" {
 			return
 		}
-		if str != "\n" {
+		if string(msg.Data) != "\n" {
 			// Green console colour: 	\x1b[32m
 			// Reset console colour: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(msg.Data))
 		}
 
 	}
 }
 
-func writeData(rw *bufio.ReadWriter) {
+func writeData(topic string, pb *pubsub.PubSub) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -57,14 +46,9 @@ func writeData(rw *bufio.ReadWriter) {
 			panic(err)
 		}
 
-		_, err = rw.WriteString(fmt.Sprintf("%s\n", sendData))
+		err = pb.Publish(topic, []byte(sendData))
 		if err != nil {
-			fmt.Println("Error writing to buffer")
-			panic(err)
-		}
-		err = rw.Flush()
-		if err != nil {
-			fmt.Println("Error flushing buffer")
+			fmt.Println("Error occurred when publishing")
 			panic(err)
 		}
 	}
@@ -76,7 +60,7 @@ func main() {
 
 	if *help {
 		fmt.Printf("Simple example for peer discovery using mDNS. mDNS is great when you have multiple peers in local LAN.")
-		fmt.Printf("Usage: \n   Run './chat-with-mdns'\nor Run './chat-with-mdns -host [host] -port [port] -rendezvous [string] -pid [proto ID]'\n")
+		fmt.Printf("Usage: \n   Run './chat-with-mdns'\nor Run './chat-with-mdns -wrapped_host [wrapped_host] -port [port] -rendezvous [string] -pid [proto ID]'\n")
 
 		os.Exit(0)
 	}
@@ -86,7 +70,7 @@ func main() {
 	ctx := context.Background()
 	r := rand.Reader
 
-	// Creates a new RSA key pair for this host.
+	// Creates a new RSA key pair for this wrapped_host.
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 	if err != nil {
 		panic(err)
@@ -107,33 +91,27 @@ func main() {
 		panic(err)
 	}
 
-	// Set a function as stream handler.
-	// This function is called when a peer initiates a connection and starts a stream with this peer.
-	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
-
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
 
-	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
+	initMDNS(ctx, &host, cfg.RendezvousString)
 
-	peer := <-peerChan // will block untill we discover a peer
-	fmt.Println("Found peer:", peer, ", connecting")
-
-	if err := host.Connect(ctx, peer); err != nil {
-		fmt.Println("Connection failed:", err)
-	}
-
-	// open a stream, this stream will be handled by handleStream other end
-	stream, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
-
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
-		fmt.Println("Stream open failed", err)
-	} else {
-		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-		go writeData(rw)
-		go readData(rw)
-		fmt.Println("Connected to:", peer)
+		fmt.Println("Error occurred when create PubSub")
+		panic(err)
 	}
+
+	subscription, err := pb.Subscribe(cfg.RendezvousString)
+	if err != nil {
+		fmt.Println("Error occurred when subscribing to topic")
+		panic(err)
+	}
+
+	fmt.Println("Waiting for correct set up of PubSub...")
+	time.Sleep(3 * time.Second)
+
+	go writeData(cfg.RendezvousString, pb)
+	go readData(subscription)
 
 	select {} //wait here
 }
