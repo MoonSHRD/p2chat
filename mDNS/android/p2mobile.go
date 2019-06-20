@@ -256,7 +256,7 @@ func writeData(rw *bufio.ReadWriter) {
 }
 
 func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
-	cfg := GetConfig(&rendezvous, &pid, &listenHost, &port)
+	cfg := GetConfig(rendezvous, pid, listenHost, port)
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.ListenHost, cfg.ListenPort)
 
