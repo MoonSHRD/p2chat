@@ -8,12 +8,16 @@ import (
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
 	"os"
 	"time"
 )
+
+var myHost host.Host
 
 func readData(subscription *pubsub.Subscription) {
 	for {
@@ -29,7 +33,16 @@ func readData(subscription *pubsub.Subscription) {
 		if string(msg.Data) != "\n" {
 			// Green console colour: 	\x1b[32m
 			// Reset console colour: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", string(msg.Data))
+			addr, err := peer.IDFromBytes(msg.From)
+			if err != nil {
+				fmt.Println("Error occurred when reading message From field...")
+				panic(err)
+			}
+
+			if addr == myHost.ID() {
+				continue
+			}
+			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr,string(msg.Data))
 		}
 
 	}
@@ -81,7 +94,7 @@ func main() {
 
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
-	host, err := libp2p.New(
+	myHost, err = libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
@@ -91,15 +104,17 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
+	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, myHost.ID().Pretty())
 
-	initMDNS(ctx, &host, cfg.RendezvousString)
 
-	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
+
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), myHost, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
 		panic(err)
 	}
+
+	initMDNS(ctx, &myHost, cfg.RendezvousString)
 
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
