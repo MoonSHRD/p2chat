@@ -18,7 +18,8 @@ type discoveryNotifee struct {
 //interface to be called when new  peer is found
 func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 	n.host.Peerstore().AddAddr(pi.ID, pi.Addrs[0], peerstore.PermanentAddrTTL)
-	fmt.Println("Peer found!")
+	n.host.Connect(context.Background(), pi)
+	fmt.Println("Peer found! Added to PeerStore.")
 }
 
 //Initialize the MDNS service
