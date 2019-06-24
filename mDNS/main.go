@@ -21,18 +21,30 @@ import (
 /*
 
 	// TODO:
+	0. fix handlers for pubsub
 	1. Update p2mobile
 	2. Update handlers in p2mobile (getters / setters) e.t.c.
 	3. Update export types in p2mobile
 	4. Add exposure functionality with topics (get topics list e.t.c.)
 	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
 
+
+	//------------------------------
+
+	// TODO: -- in this file -- make this first
+	1. Make new ReadTopic, which will be subscribe to a new topic and get messages
+	2. getTopic list (probably also getTopics across network?)
+
 */
 
 var myself host.Host
 var Pb *pubsub.PubSub
+//var Ctx context.Context
 
-func readData(subscription *pubsub.Subscription) {
+// Read messages from subscription (topic)
+// NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
+// it could be replaced by getting global Pb object..?
+func readSub(subscription *pubsub.Subscription) {
 	for {
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
@@ -60,8 +72,22 @@ func readData(subscription *pubsub.Subscription) {
 
 	}
 }
+	// Subscribes to a topic and then get messages ..
+	func subscribeRead(topic string)  {
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		time.Sleep(2 * time.Second)
+		readSub(subscription)
 
-func writeData(topic string) {
+	}
+
+
+// Write messages to subscription (topic)
+// NOTE: we don't have to be subscribed to publish something
+func writeTopic(topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -79,6 +105,9 @@ func writeData(topic string) {
 		}
 	}
 }
+
+
+
 
 func main() {
 	help := flag.Bool("help", false, "Display Help")

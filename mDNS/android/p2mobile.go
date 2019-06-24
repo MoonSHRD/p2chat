@@ -12,6 +12,7 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"os"
 	"strings"
+	"github.com/libp2p/go-libp2p-pubsub"
 )
 
 //
@@ -50,6 +51,8 @@ type Config struct {
 var P StreamApi
 
 
+var Pb *pubsub.PubSub
+
 func SetStreamApi(stream network.Stream) {
 	P.Stream = stream
 }
@@ -86,12 +89,8 @@ func handleStream(stream network.Stream) {
 	// NOTE: uncomment it for debug mode
 	//	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-	// HACK: if we will use &stream pointer instead of stream interface we could get Ptk with pointer to a dinamic variable. Which means if stream interface will change - we will auto
-	// switch to this new interface.
-	// note - it can be multiple interfaces in one device, so, we MUST store some kind of stream ID in sturcture delayed in global mapping
-	Ptk = &stream
-	fmt.Println("stream pointer:")
-	fmt.Println(Ptk)
+
+
 
 	SetStreamApi(stream)
 
@@ -245,6 +244,7 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
+// TODO:  why is there types with a pointer? Is it for export?
 func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 	cfg := GetConfig(rendezvous, pid, listenHost, port)
 
@@ -280,14 +280,49 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID().Pretty())
 
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
+	if err != nil {
+		fmt.Println("Error occurred when create PubSub")
+		panic(err)
+	}
+
+	Pb = pb
+
+
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
 	peer := <-peerChan // will block untill we discover a peer
 	fmt.Println("Found peer:", peer, ", connecting")
 
-	if err := host.Connect(ctx, peer); err != nil {
-		fmt.Println("Connection failed:", err)
+
+	// Adding peer addresses to local peerstore
+	host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.PermanentAddrTTL)
+
+	// TODO: probably we need somehow to get available topic's list before connect (not sure that we actually can do this before connection.. research needed)
+
+
+
+	//Subscription should go BEFORE connections
+// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
+	subscription, err := pb.Subscribe(cfg.RendezvousString)
+	if err != nil {
+		fmt.Println("Error occurred when subscribing to topic")
+		panic(err)
 	}
+
+	// Connect to the peer
+	if err := host.Connect(ctx, peer); err != nil {
+	fmt.Println("Connection failed:", err)
+	}
+	fmt.Println("Connected to:", peer)
+
+
+
+
+	fmt.Println("Waiting for correct set up of PubSub...")
+	time.Sleep(3 * time.Second)
+
+
 
 	// open a stream, this stream will be handled by handleStream other end		(Handle OUTcoming connections)
 	stream, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
