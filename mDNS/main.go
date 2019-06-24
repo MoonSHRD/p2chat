@@ -21,18 +21,30 @@ import (
 /*
 
 	// TODO:
-	1. Update p2mobile
+	0.
+	1.
 	2. Update handlers in p2mobile (getters / setters) e.t.c.
 	3. Update export types in p2mobile
 	4. Add exposure functionality with topics (get topics list e.t.c.)
 	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
 
+
+	//------------------------------
+
+	// TODO: -- in this file --
+	1. newTopic function
+	2. getTopic list (probably also getTopics across network?)
+
 */
 
 var myself host.Host
 var Pb *pubsub.PubSub
+//var Ctx context.Context
 
-func readData(subscription *pubsub.Subscription) {
+// Read messages from subscription (topic)
+// NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
+// it could be replaced by getting global Pb object..?
+func readSub(subscription *pubsub.Subscription) {
 	for {
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
@@ -51,7 +63,7 @@ func readData(subscription *pubsub.Subscription) {
 				fmt.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
-
+			// weird
 			if addr == myself.ID() {
 				continue
 			}
@@ -60,8 +72,54 @@ func readData(subscription *pubsub.Subscription) {
 
 	}
 }
+	// Subscribes to a topic and then get messages ..
+	func subscribeRead(topic string)  {
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		time.Sleep(2 * time.Second)
+		readSub(subscription)
 
-func writeData(topic string) {
+	}
+
+	// Get list of topics this node is subscribed to
+	func getTopics() []string {
+		topics := Pb.GetTopics()
+		return topics
+	}
+
+	// Get list of peers we connected to a specifiec topic
+	func getTopicMembers(topic string) []peer.ID  {
+		members := Pb.ListPeers(topic)
+		return members
+	}
+
+
+// Initialize new chat with given topic string
+// this node will subscribe to a new messages and discovery for our topic and publish a hello message
+	func newTopic(topic string)  {
+		sendData := string("hello")
+		// probably don't need to subscribe
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		fmt.Println("subscription:",subscription)
+		time.Sleep(2 * time.Second)
+		err = Pb.Publish(topic, []byte(sendData))
+		if err != nil {
+			fmt.Println("Error occurred when publishing")
+			panic(err)
+		}
+	}
+
+
+// Write messages to subscription (topic)
+// NOTE: we don't have to be subscribed to publish something
+func writeTopic(topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -79,6 +137,9 @@ func writeData(topic string) {
 		}
 	}
 }
+
+
+
 
 func main() {
 	help := flag.Bool("help", false, "Display Help")
@@ -163,8 +224,8 @@ func main() {
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
-	go writeData(cfg.RendezvousString)
-	go readData(subscription)
+	go writeTopic(cfg.RendezvousString)
+	go readSub(subscription)
 
 	select {} //wait here
 }
