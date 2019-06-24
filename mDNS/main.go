@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var myHost host.Host
+//var myHost host.Host
 
 func readData(subscription *pubsub.Subscription) {
 	for {
@@ -94,7 +94,7 @@ func main() {
 
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
-	myHost, err = libp2p.New(
+	host, err := libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
@@ -104,23 +104,44 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, myHost.ID().Pretty())
+	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
 
 
 
-	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), myHost, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
 		panic(err)
 	}
 
-	initMDNS(ctx, &myHost, cfg.RendezvousString)
+// Randezvous string = service tag
+	// Disvover all peers with our service (all ms devices)
+	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
+
+	peer := <-peerChan // will block untill we discover a peer
+	fmt.Println("Found peer:", peer, ", add address to peerstore")
+
+	// Adding peer addresses to local peerstore
+	host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.PermanentAddrTTL)
+
+
+
+	//Subscription should go BEFORE connections
 
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
+
+	// Connect to the peer
+	if err := host.Connect(ctx, peer); err != nil {
+	fmt.Println("Connection failed:", err)
+	}
+	fmt.Println("Connected to:", peer)
+
+
+
 
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
