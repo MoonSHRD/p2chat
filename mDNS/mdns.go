@@ -12,6 +12,16 @@ import (
 )
 
 type discoveryNotifee struct {
+	PeerChan chan peer.AddrInfo
+}
+
+//interface to be called when new  peer is found
+func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
+	n.PeerChan <- pi
+}
+
+/*
+type discoveryNotifee struct {
 	host     host.Host
 }
 
@@ -21,19 +31,22 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 	n.host.Connect(context.Background(), pi)
 	fmt.Println("Peer found! Added to PeerStore.")
 }
+*/
+
 
 //Initialize the MDNS service
-func initMDNS(ctx context.Context, host *host.Host, rendezvous string) {
+func initMDNS(ctx context.Context, thishost *host.Host, rendezvous string) {
 	// An hour might be a long long period in practical applications. But this is fine for us
-	ser, err := discovery.NewMdnsService(ctx, *host, time.Hour, rendezvous)
+	ser, err := discovery.NewMdnsService(ctx, thishost, time.Hour, rendezvous)
 	if err != nil {
 		panic(err)
 	}
 
-	// Register with service so that we get notified about peer discovery
-	n := &discoveryNotifee{
-		host: *host,
-	}
+	//register with service so that we get notified about peer discovery
+	n := &discoveryNotifee{}
+	n.PeerChan = make(chan peer.AddrInfo)
 
 	ser.RegisterNotifee(n)
+	
+	return n.PeerChan
 }

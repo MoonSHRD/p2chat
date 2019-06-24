@@ -319,6 +319,7 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 	select {} //wait here
 }
 
+// TODO: get this part to separate file (flags or whatever). all defaults parameters and their parsing should be done from separate file
 func GetConfig(rendezvous *string, pid *string, host *string, port *int) *Config {
 	c := &Config{}
 
