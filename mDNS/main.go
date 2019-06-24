@@ -18,7 +18,15 @@ import (
 	"time"
 )
 
+/*
+
+	// TODO:
+	1. 
+
+*/
+
 var myself host.Host
+var Pb *pubsub.PubSub
 
 func readData(subscription *pubsub.Subscription) {
 	for {
@@ -49,7 +57,7 @@ func readData(subscription *pubsub.Subscription) {
 	}
 }
 
-func writeData(topic string, pb *pubsub.PubSub) {
+func writeData(topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -60,7 +68,7 @@ func writeData(topic string, pb *pubsub.PubSub) {
 			panic(err)
 		}
 
-		err = pb.Publish(topic, []byte(sendData))
+		err = Pb.Publish(topic, []byte(sendData))
 		if err != nil {
 			fmt.Println("Error occurred when publishing")
 			panic(err)
@@ -116,6 +124,9 @@ func main() {
 		panic(err)
 	}
 
+	Pb = pb
+
+
 // Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
@@ -129,7 +140,7 @@ func main() {
 
 
 	//Subscription should go BEFORE connections
-
+// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -148,7 +159,7 @@ func main() {
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
-	go writeData(cfg.RendezvousString, pb)
+	go writeData(cfg.RendezvousString)
 	go readData(subscription)
 
 	select {} //wait here
