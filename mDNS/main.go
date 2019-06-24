@@ -21,7 +21,11 @@ import (
 /*
 
 	// TODO:
-	1. 
+	1. Update p2mobile
+	2. Update handlers in p2mobile (getters / setters) e.t.c.
+	3. Update export types in p2mobile
+	4. Add exposure functionality with topics (get topics list e.t.c.)
+	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
 
 */
 
