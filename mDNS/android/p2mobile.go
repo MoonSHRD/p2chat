@@ -43,16 +43,43 @@ type StreamApi struct {
 }
 */
 
+
+/*
+// TODO: build & bind tests -- make this firsts
+
+1. try to build
+2. try export structures / functions
+3. try for android
+
+
+// TODO: functionality tests
+1.	try to connect two devices and test message trasmission between them
+2.	try to connect between three different devices onto one topic and test message transmission between them
+3.	try getTopics... not sure how it should work
+
+// TODO: get topics lists across the network
+Task is to get all topics across network (inside our service 'moonshard').
+The pitfall is - we have to subscribe before connection to nodes.
+Probably we need to subscribe to moonshard topic, connect to peers, then ask them about what topics are they subscribed to..
+Really not sure how it works, need to research
+
+
+// TODO: next features
+1. get topic list across the network
+2. implement encryption pubsub.WithMessageSigning(TRUE)
+3.
+
+
+
+
+*/
+
 type Config struct {
 	RendezvousString string // Unique string to identify group of nodes. Share this with your friends to let them connect with you
 	ProtocolID       string // Sets a protocol id for stream headers
 	ListenHost       string // The bootstrap node host listen address
 	ListenPort       int    // Node listen port
 }
-
-
-
-
 
 
 var myself host.Host
@@ -164,6 +191,7 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 
 	myself = host
 
+	// Initialize pubsub object
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
