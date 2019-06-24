@@ -24,7 +24,7 @@ Probably will switch to SONM solution, but as far we are fully accomplish with l
 
 
 ## How to build
-require go version >=1.11 , so make sure your `go version` is okay
+require go version >=1.12 , so make sure your `go version` is okay
 
 If it start yelling about go modules, try
 ```
@@ -58,6 +58,9 @@ Remember about NAT penetration!
 go get -v -d ./...
 go build
 ```
+
+**Note** - it may require to use modules (with specifiec versions)
+
 ### How to use mDNS  
 
 Use two different terminal windows to run
@@ -144,12 +147,12 @@ Finally we open stream to the peers we found, as we find them
 
 ### How to build Android module
 
-``` 
+```
 cd ./mDNS/android/
 gomobile bind -target=android -v
 ```
 
-this will generate you `*.aar` and `*.jar`packages for android 
+this will generate you `*.aar` and `*.jar`packages for android
 
 then, open your project in android studio, go `File -> ProjectStructure -> modules -> new module -> Import aar/jar`
 and then open "*.aar" file.

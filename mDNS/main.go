@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
@@ -17,9 +18,33 @@ import (
 	"time"
 )
 
-var myHost host.Host
+/*
 
-func readData(subscription *pubsub.Subscription) {
+	// TODO:
+	0.
+	1.
+	2. Update handlers in p2mobile (getters / setters) e.t.c.
+	3. Update export types in p2mobile
+	4. Add exposure functionality with topics (get topics list e.t.c.)
+	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
+
+
+	//------------------------------
+
+	// TODO: -- in this file --
+	1. newTopic function
+	2. getTopic list (probably also getTopics across network?)
+
+*/
+
+var myself host.Host
+var Pb *pubsub.PubSub
+//var Ctx context.Context
+
+// Read messages from subscription (topic)
+// NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
+// it could be replaced by getting global Pb object..?
+func readSub(subscription *pubsub.Subscription) {
 	for {
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
@@ -38,8 +63,8 @@ func readData(subscription *pubsub.Subscription) {
 				fmt.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
-
-			if addr == myHost.ID() {
+			// weird
+			if addr == myself.ID() {
 				continue
 			}
 			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr,string(msg.Data))
@@ -47,8 +72,54 @@ func readData(subscription *pubsub.Subscription) {
 
 	}
 }
+	// Subscribes to a topic and then get messages ..
+	func subscribeRead(topic string)  {
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		time.Sleep(2 * time.Second)
+		readSub(subscription)
 
-func writeData(topic string, pb *pubsub.PubSub) {
+	}
+
+	// Get list of topics this node is subscribed to
+	func getTopics() []string {
+		topics := Pb.GetTopics()
+		return topics
+	}
+
+	// Get list of peers we connected to a specifiec topic
+	func getTopicMembers(topic string) []peer.ID  {
+		members := Pb.ListPeers(topic)
+		return members
+	}
+
+
+// Initialize new chat with given topic string
+// this node will subscribe to a new messages and discovery for our topic and publish a hello message
+	func newTopic(topic string)  {
+		sendData := string("hello")
+		// probably don't need to subscribe
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		fmt.Println("subscription:",subscription)
+		time.Sleep(2 * time.Second)
+		err = Pb.Publish(topic, []byte(sendData))
+		if err != nil {
+			fmt.Println("Error occurred when publishing")
+			panic(err)
+		}
+	}
+
+
+// Write messages to subscription (topic)
+// NOTE: we don't have to be subscribed to publish something
+func writeTopic(topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -59,13 +130,16 @@ func writeData(topic string, pb *pubsub.PubSub) {
 			panic(err)
 		}
 
-		err = pb.Publish(topic, []byte(sendData))
+		err = Pb.Publish(topic, []byte(sendData))
 		if err != nil {
 			fmt.Println("Error occurred when publishing")
 			panic(err)
 		}
 	}
 }
+
+
+
 
 func main() {
 	help := flag.Bool("help", false, "Display Help")
@@ -94,7 +168,7 @@ func main() {
 
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
-	myHost, err = libp2p.New(
+	host, err := libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
@@ -104,29 +178,54 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, myHost.ID().Pretty())
+	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
+
+	myself = host
 
 
-
-	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), myHost, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
 		panic(err)
 	}
 
-	initMDNS(ctx, &myHost, cfg.RendezvousString)
+	Pb = pb
 
+
+// Randezvous string = service tag
+	// Disvover all peers with our service (all ms devices)
+	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
+
+	peer := <-peerChan // will block untill we discover a peer
+	fmt.Println("Found peer:", peer, ", add address to peerstore")
+
+	// Adding peer addresses to local peerstore
+	host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.PermanentAddrTTL)
+
+
+
+	//Subscription should go BEFORE connections
+// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
 
+	// Connect to the peer
+	if err := host.Connect(ctx, peer); err != nil {
+	fmt.Println("Connection failed:", err)
+	}
+	fmt.Println("Connected to:", peer)
+
+
+
+
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
-	go writeData(cfg.RendezvousString, pb)
-	go readData(subscription)
+	go writeTopic(cfg.RendezvousString)
+	go readSub(subscription)
 
 	select {} //wait here
 }
