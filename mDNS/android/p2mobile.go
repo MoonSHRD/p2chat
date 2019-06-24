@@ -1,18 +1,23 @@
 package p2mobile
 
 import (
-	"bufio"
+//	"bufio"
 	"context"
 	"crypto/rand"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/network"
+//	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/multiformats/go-multiaddr"
-	"os"
-	"strings"
 	"github.com/libp2p/go-libp2p-pubsub"
+	"github.com/multiformats/go-multiaddr"
+
+//	"os"
+//	"strings"
+	"time"
+
 )
 
 //
@@ -69,7 +74,9 @@ func GetStreamApiInterface(ApiStruct *StreamApi) network.Stream {
 	return streamInterface
 }
 
+//=====STREAM PART====//
 
+/*
 
 // NOTE:
 //    handleStream function is invoked in VHODYASHIE calls
@@ -159,6 +166,10 @@ func readData(rw *bufio.ReadWriter) {
 	}
 }
 
+*/
+
+/*
+
 // this function should take string as argument and write it to the buffer
 // NOTE - this function is duplicate of writeData function. difference is in method of input (android doesn't have stdIn)
 func writeHandler(rw *bufio.ReadWriter, str string) {
@@ -180,7 +191,7 @@ func writeHandler(rw *bufio.ReadWriter, str string) {
 				panic(err)
 			}
 		*/
-
+/*
 		_, err = rw.WriteString(fmt.Sprintf("%s\n", sendData))
 		if err != nil {
 			fmt.Println("Error writing to buffer")
@@ -222,6 +233,9 @@ func readHandler(rw *bufio.ReadWriter) string {
 }
 */
 
+
+/*
+
 // NOTE: if this function will invoke from android side - app will crash.
 func writeData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
@@ -247,9 +261,17 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
+*/
+
+
+
+
+//======== PubSub related ==========//
+
+
 // Subscribe to a topic and get messages from it
-func SubscribeRead(string topic) string msg  {
-	subscription, err := Pb.subscribe(topic)
+func SubscribeRead(topic string) string {
+	subscription, err := Pb.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
@@ -310,7 +332,7 @@ func PublishMessage(topic string, message string)  {
 
 
 
-
+//======Main function========//
 
 
 // TODO:  why is there types with a pointer? Is it for export?
@@ -345,7 +367,7 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 
 	// Set a function as stream handler.
 	// This function is called when a peer initiates a connection and starts a stream with this peer. (Handle incoming connections)
-	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
+//	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID().Pretty())
 
@@ -392,6 +414,8 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 	time.Sleep(3 * time.Second)
 
 
+
+/*
 // TODO: remove stream part
 	// open a stream, this stream will be handled by handleStream other end		(Handle OUTcoming connections)
 	stream, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
@@ -409,6 +433,11 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 
 		fmt.Println("Connected to:", peer)
 	}
+	*/
+
+
+	//go writeTopic(cfg.RendezvousString)
+	go ReadSub(subscription)
 
 	select {} //wait here
 }
