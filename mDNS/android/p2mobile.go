@@ -325,7 +325,7 @@ func GetConfig(rendezvous *string, pid *string, host *string, port *int) *Config
 	if *rendezvous != "" && rendezvous != nil {
 		c.RendezvousString = *rendezvous
 	} else {
-		c.RendezvousString = "meetme"
+		c.RendezvousString = "moonshard"
 	}
 
 	if *pid != "" && pid != nil {
