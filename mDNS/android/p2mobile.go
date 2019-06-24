@@ -49,9 +49,6 @@ type Config struct {
 // "invalid memory address or nil pointer dereference" so instead of this we will use special setters and getters for this variable, instead of direct access.
 var P StreamApi
 
-// NOTE:  pointer to the stream, but it is not a stream interface itself.
-// If we want access stream class on Java side we should use exportable structure above
-var Ptk *network.Stream
 
 func SetStreamApi(stream network.Stream) {
 	P.Stream = stream
@@ -69,14 +66,7 @@ func GetStreamApiInterface(ApiStruct *StreamApi) network.Stream {
 	return streamInterface
 }
 
-// TODO: useless code (duplicate) need to remove everything with Ptk, made this to test pointers bug
-// NOTE:  here is work with global variables. Still don't sure about Java, so making two methods.
-func GetStreamPointer() *network.Stream {
-	return Ptk
-}
-func SetStreamPointer(stream network.Stream) {
-	Ptk = &stream
-}
+
 
 // NOTE:
 //    handleStream function is invoked in VHODYASHIE calls
