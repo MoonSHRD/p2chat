@@ -84,6 +84,18 @@ func readSub(subscription *pubsub.Subscription) {
 
 	}
 
+	// Get list of topics this node is subscribed to
+	func getTopics() []string {
+		topics := Pb.GetTopics()
+		return topics
+	}
+
+	// Get list of peers we connected to a specifiec topic
+	func getTopicMembers(topic string) []peer.ID  {
+		members := Pb.ListPeers(topic)
+		return members
+	}
+
 
 // Write messages to subscription (topic)
 // NOTE: we don't have to be subscribed to publish something
@@ -192,8 +204,8 @@ func main() {
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
-	go writeData(cfg.RendezvousString)
-	go readData(subscription)
+	go writeTopic(cfg.RendezvousString)
+	go readSub(subscription)
 
 	select {} //wait here
 }
