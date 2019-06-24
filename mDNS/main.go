@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
@@ -17,7 +18,7 @@ import (
 	"time"
 )
 
-//var myHost host.Host
+var myself host.Host
 
 func readData(subscription *pubsub.Subscription) {
 	for {
@@ -39,7 +40,7 @@ func readData(subscription *pubsub.Subscription) {
 				panic(err)
 			}
 
-			if addr == myHost.ID() {
+			if addr == myself.ID() {
 				continue
 			}
 			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr,string(msg.Data))
@@ -106,6 +107,7 @@ func main() {
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
 
+	myself = host
 
 
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
