@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-//	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -37,9 +37,11 @@ import (
 //
 
 //
+/*
 type StreamApi struct {
 	Stream network.Stream
 }
+*/
 
 type Config struct {
 	RendezvousString string // Unique string to identify group of nodes. Share this with your friends to let them connect with you
@@ -53,11 +55,16 @@ type Config struct {
 // also if we want to export any function in Java - we should define its type by "*". Pure types can't be exported as is.
 // also, if we actually will make type of P as a pointer, to get this var in android var - it possible will break the rest of the program due
 // "invalid memory address or nil pointer dereference" so instead of this we will use special setters and getters for this variable, instead of direct access.
-var P StreamApi
+//var P StreamApi
 
+
+
+var myself host.Host
 
 var Pb *pubsub.PubSub
 
+
+/*
 func SetStreamApi(stream network.Stream) {
 	P.Stream = stream
 }
@@ -73,7 +80,7 @@ func GetStreamApiInterface(ApiStruct *StreamApi) network.Stream {
 	streamInterface := ApiStruct.Stream
 	return streamInterface
 }
-
+*/
 //=====STREAM PART====//
 
 /*
@@ -284,16 +291,16 @@ func SubscribeRead(topic string) string {
 
 // this function get new messages from subscribed topic
 // working with strings now.. probably be better with data?
-func ReadSub(subscription *pubsub.Subsription) string {
+func ReadSub(subscription *pubsub.Subscription) string {
 	for {
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
 			fmt.Println("Error reading from subscription")
 			panic(err)
 		}
-
+		// TODO: weird behavior, remove or rework it
 		if string(msg.Data) == "" {
-			return
+			return string(msg.Data)
 		}
 		if string(msg.Data) != "\n" {
 			// Green console colour: 	\x1b[32m
@@ -322,7 +329,7 @@ func ReadSub(subscription *pubsub.Subsription) string {
 // Publish message into some topic
 // working with 'strings' messages. Don't like it
 func PublishMessage(topic string, message string)  {
-	err = Pb.Publish(topic, []byte(message))
+	err := Pb.Publish(topic, []byte(message))
 	if err != nil {
 		fmt.Println("Error occurred when publishing")
 		panic(err)
@@ -370,6 +377,8 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 //	host.SetStreamHandler(protocol.ID(cfg.ProtocolID), handleStream)
 
 	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.ListenHost, cfg.ListenPort, host.ID().Pretty())
+
+	myself = host
 
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
