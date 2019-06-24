@@ -58,6 +58,9 @@ Remember about NAT penetration!
 go get -v -d ./...
 go build
 ```
+
+**Note** - it may require to use modules (with specifiec versions)
+
 ### How to use mDNS  
 
 Use two different terminal windows to run
