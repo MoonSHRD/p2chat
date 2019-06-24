@@ -63,7 +63,7 @@ func readSub(subscription *pubsub.Subscription) {
 				fmt.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
-
+			// weird
 			if addr == myself.ID() {
 				continue
 			}
