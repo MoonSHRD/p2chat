@@ -20,20 +20,6 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 	n.PeerChan <- pi
 }
 
-/*
-type discoveryNotifee struct {
-	host     host.Host
-}
-
-//interface to be called when new  peer is found
-func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
-	n.host.Peerstore().AddAddr(pi.ID, pi.Addrs[0], peerstore.PermanentAddrTTL)
-	n.host.Connect(context.Background(), pi)
-	fmt.Println("Peer found! Added to PeerStore.")
-}
-*/
-
-
 //Initialize the MDNS service
 func initMDNS(ctx context.Context, thishost host.Host, rendezvous string) chan peer.AddrInfo {
 	// An hour might be a long long period in practical applications. But this is fine for us
