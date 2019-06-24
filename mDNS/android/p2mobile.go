@@ -67,7 +67,7 @@ Really not sure how it works, need to research
 // TODO: next features
 1. get topic list across the network
 2. implement encryption pubsub.WithMessageSigning(TRUE)
-3.
+3. update readme cause now it's written for streams. Need to add info about how we are working with pubsub -- it may be helpful for future developers
 
 
 
@@ -89,6 +89,24 @@ var Pb *pubsub.PubSub
 
 //======== PubSub related ==========//
 
+// Initialize new chat with given topic string
+// this node will subscribe to a new messages and discovery for our topic and publish a hello message
+	func NewTopic(topic string)  {
+		sendData := string("hello")
+		// probably don't need to subscribe
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		fmt.Println("subscription:",subscription)
+		time.Sleep(2 * time.Second)
+		err = Pb.Publish(topic, []byte(sendData))
+		if err != nil {
+			fmt.Println("Error occurred when publishing")
+			panic(err)
+		}
+	}
 
 // Subscribe to a topic and get messages from it
 func SubscribeRead(topic string) string {
