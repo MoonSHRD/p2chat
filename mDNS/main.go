@@ -97,6 +97,26 @@ func readSub(subscription *pubsub.Subscription) {
 	}
 
 
+// Initialize new chat with given topic string
+// this node will subscribe to a new messages and discovery for our topic and publish a hello message
+	func newTopic(topic string)  {
+		sendData := string("hello")
+		// probably don't need to subscribe
+		subscription, err := Pb.Subscribe(topic)
+		if err != nil {
+			fmt.Println("Error occurred when subscribing to topic")
+			panic(err)
+		}
+		fmt.Println("subscription:",subscription)
+		time.Sleep(2 * time.Second)
+		err = Pb.Publish(topic, []byte(sendData))
+		if err != nil {
+			fmt.Println("Error occurred when publishing")
+			panic(err)
+		}
+	}
+
+
 // Write messages to subscription (topic)
 // NOTE: we don't have to be subscribed to publish something
 func writeTopic(topic string) {
