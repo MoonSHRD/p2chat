@@ -194,6 +194,8 @@ func writeHandler(rw *bufio.ReadWriter, str string) {
 	}
 }
 
+
+/*
 // this function should take string as argument and write it to the buffer
 func readHandler(rw *bufio.ReadWriter) string {
 
@@ -218,6 +220,7 @@ func readHandler(rw *bufio.ReadWriter) string {
 
 	}
 }
+*/
 
 // NOTE: if this function will invoke from android side - app will crash.
 func writeData(rw *bufio.ReadWriter) {
@@ -243,6 +246,72 @@ func writeData(rw *bufio.ReadWriter) {
 		}
 	}
 }
+
+// Subscribe to a topic and get messages from it
+func SubscribeRead(string topic) string msg  {
+	subscription, err := Pb.subscribe(topic)
+	if err != nil {
+		fmt.Println("Error occurred when subscribing to topic")
+		panic(err)
+	}
+	time.Sleep(2 * time.Second)
+		msg := ReadSub(subscription)
+		return msg
+}
+
+
+// this function get new messages from subscribed topic
+// working with strings now.. probably be better with data?
+func ReadSub(subscription *pubsub.Subsription) string {
+	for {
+		msg, err := subscription.Next(context.Background())
+		if err != nil {
+			fmt.Println("Error reading from subscription")
+			panic(err)
+		}
+
+		if string(msg.Data) == "" {
+			return
+		}
+		if string(msg.Data) != "\n" {
+			// Green console colour: 	\x1b[32m
+			// Reset console colour: 	\x1b[0m
+			addr, err := peer.IDFromBytes(msg.From)
+			if err != nil {
+				fmt.Println("Error occurred when reading message From field...")
+				panic(err)
+			}
+
+			if addr == myself.ID() {
+				continue
+			}
+			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr,string(msg.Data))
+			message := string(msg.Data)
+			return message
+		}
+
+
+
+	}
+}
+
+
+
+// Publish message into some topic
+// working with 'strings' messages. Don't like it
+func PublishMessage(topic string, message string)  {
+	err = Pb.Publish(topic, []byte(message))
+	if err != nil {
+		fmt.Println("Error occurred when publishing")
+		panic(err)
+	}
+}
+
+
+
+
+
+
 
 // TODO:  why is there types with a pointer? Is it for export?
 func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
@@ -323,7 +392,7 @@ func Start(rendezvous *string, pid *string, listenHost *string, port *int) {
 	time.Sleep(3 * time.Second)
 
 
-
+// TODO: remove stream part
 	// open a stream, this stream will be handled by handleStream other end		(Handle OUTcoming connections)
 	stream, err := host.NewStream(ctx, peer.ID, protocol.ID(cfg.ProtocolID))
 
