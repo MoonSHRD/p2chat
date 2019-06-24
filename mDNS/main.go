@@ -21,8 +21,8 @@ import (
 /*
 
 	// TODO:
-	0. fix handlers for pubsub
-	1. Update p2mobile
+	0.
+	1.
 	2. Update handlers in p2mobile (getters / setters) e.t.c.
 	3. Update export types in p2mobile
 	4. Add exposure functionality with topics (get topics list e.t.c.)
@@ -31,8 +31,8 @@ import (
 
 	//------------------------------
 
-	// TODO: -- in this file -- make this first
-	1. Make new ReadTopic, which will be subscribe to a new topic and get messages
+	// TODO: -- in this file --
+	1. newTopic function
 	2. getTopic list (probably also getTopics across network?)
 
 */
