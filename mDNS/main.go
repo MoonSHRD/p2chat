@@ -67,55 +67,54 @@ func readSub(subscription *pubsub.Subscription) {
 			if addr == myself.ID() {
 				continue
 			}
-			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr,string(msg.Data))
+			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, string(msg.Data))
 		}
 
 	}
 }
-	// Subscribes to a topic and then get messages ..
-	func subscribeRead(topic string)  {
-		subscription, err := Pb.Subscribe(topic)
-		if err != nil {
-			fmt.Println("Error occurred when subscribing to topic")
-			panic(err)
-		}
-		time.Sleep(2 * time.Second)
-		readSub(subscription)
 
+// Subscribes to a topic and then get messages ..
+func subscribeRead(topic string) {
+	subscription, err := Pb.Subscribe(topic)
+	if err != nil {
+		fmt.Println("Error occurred when subscribing to topic")
+		panic(err)
 	}
+	time.Sleep(2 * time.Second)
+	readSub(subscription)
 
-	// Get list of topics this node is subscribed to
-	func getTopics() []string {
-		topics := Pb.GetTopics()
-		return topics
-	}
+}
 
-	// Get list of peers we connected to a specifiec topic
-	func getTopicMembers(topic string) []peer.ID  {
-		members := Pb.ListPeers(topic)
-		return members
-	}
+// Get list of topics this node is subscribed to
+func getTopics() []string {
+	topics := Pb.GetTopics()
+	return topics
+}
 
+// Get list of peers we connected to a specifiec topic
+func getTopicMembers(topic string) []peer.ID {
+	members := Pb.ListPeers(topic)
+	return members
+}
 
 // Initialize new chat with given topic string
 // this node will subscribe to a new messages and discovery for our topic and publish a hello message
-	func newTopic(topic string)  {
-		sendData := string("hello")
-		// probably don't need to subscribe
-		subscription, err := Pb.Subscribe(topic)
-		if err != nil {
-			fmt.Println("Error occurred when subscribing to topic")
-			panic(err)
-		}
-		fmt.Println("subscription:",subscription)
-		time.Sleep(2 * time.Second)
-		err = Pb.Publish(topic, []byte(sendData))
-		if err != nil {
-			fmt.Println("Error occurred when publishing")
-			panic(err)
-		}
+func newTopic(topic string) {
+	sendData := string("hello")
+	// probably don't need to subscribe
+	subscription, err := Pb.Subscribe(topic)
+	if err != nil {
+		fmt.Println("Error occurred when subscribing to topic")
+		panic(err)
 	}
-
+	fmt.Println("subscription:", subscription)
+	time.Sleep(2 * time.Second)
+	err = Pb.Publish(topic, []byte(sendData))
+	if err != nil {
+		fmt.Println("Error occurred when publishing")
+		panic(err)
+	}
+}
 
 // Write messages to subscription (topic)
 // NOTE: we don't have to be subscribed to publish something
@@ -137,9 +136,6 @@ func writeTopic(topic string) {
 		}
 	}
 }
-
-
-
 
 func main() {
 	help := flag.Bool("help", false, "Display Help")
@@ -182,7 +178,6 @@ func main() {
 
 	myself = host
 
-
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
@@ -191,8 +186,7 @@ func main() {
 
 	Pb = pb
 
-
-// Randezvous string = service tag
+	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
@@ -202,10 +196,8 @@ func main() {
 	// Adding peer addresses to local peerstore
 	host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.PermanentAddrTTL)
 
-
-
 	//Subscription should go BEFORE connections
-// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
+	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -214,12 +206,9 @@ func main() {
 
 	// Connect to the peer
 	if err := host.Connect(ctx, peer); err != nil {
-	fmt.Println("Connection failed:", err)
+		fmt.Println("Connection failed:", err)
 	}
 	fmt.Println("Connected to:", peer)
-
-
-
 
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
