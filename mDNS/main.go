@@ -44,7 +44,7 @@ var Pb *pubsub.PubSub
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
 // it could be replaced by getting global Pb object..?
-func readSub(subscription *pubsub.Subscription) {
+func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
 	for {
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
@@ -56,22 +56,22 @@ func readSub(subscription *pubsub.Subscription) {
 			return
 		}
 		if string(msg.Data) != "\n" {
-			// Green console colour: 	\x1b[32m
-			// Reset console colour: 	\x1b[0m
 			addr, err := peer.IDFromBytes(msg.From)
 			if err != nil {
 				fmt.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
-			// weird
+
+			// This checks if sender address of incoming message is ours. It is need because we get our messages when subscribed to the same topic.
 			if addr == myself.ID() {
 				continue
 			}
-			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, string(msg.Data))
+			incomingMessagesChan <- *msg
 		}
 
 	}
 }
+
 
 // Subscribes to a topic and then get messages ..
 func subscribeRead(topic string) {
@@ -81,8 +81,18 @@ func subscribeRead(topic string) {
 		panic(err)
 	}
 	time.Sleep(2 * time.Second)
-	readSub(subscription)
-
+	incomingMessages := make(chan pubsub.Message)
+	readSub(subscription, incomingMessages)
+	select {
+		case msg := <- incomingMessages: {
+			addr, err := peer.IDFromBytes(msg.From)
+			if err != nil {
+				fmt.Println("Error occurred when reading message From field...")
+				panic(err)
+			}
+			fmt.Printf("\x1b[32m%s\x1b[0m> %s", addr, string(msg.Data))
+		}
+	}
 }
 
 // Get list of topics this node is subscribed to
@@ -117,7 +127,7 @@ func newTopic(topic string) {
 }
 
 // Write messages to subscription (topic)
-// NOTE: we don't have to be subscribed to publish something
+// NOTE: we don't need to be subscribed to publish something
 func writeTopic(topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
 
@@ -190,13 +200,7 @@ func main() {
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
-	peer := <-peerChan // will block untill we discover a peer
-	fmt.Println("Found peer:", peer, ", add address to peerstore")
 
-	// Adding peer addresses to local peerstore
-	host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.PermanentAddrTTL)
-
-	//Subscription should go BEFORE connections
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
@@ -204,17 +208,38 @@ func main() {
 		panic(err)
 	}
 
-	// Connect to the peer
-	if err := host.Connect(ctx, peer); err != nil {
-		fmt.Println("Connection failed:", err)
-	}
-	fmt.Println("Connected to:", peer)
-
 	fmt.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
-	go writeTopic(cfg.RendezvousString)
-	go readSub(subscription)
+	incomingMessages := make(chan pubsub.Message)
 
-	select {} //wait here
+	go writeTopic(cfg.RendezvousString)
+	go readSub(subscription, incomingMessages)
+
+	for {
+		select {
+		case msg := <- incomingMessages: {
+			addr, err := peer.IDFromBytes(msg.From)
+			if err != nil {
+				fmt.Println("Error occurred when reading message From field...")
+				panic(err)
+			}
+
+			// Green console colour: 	\x1b[32m
+			// Reset console colour: 	\x1b[0m
+			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, string(msg.Data))
+		}
+		case newPeer := <- peerChan: {
+			fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
+
+			// Adding peer addresses to local peerstore
+			host.Peerstore().AddAddr(newPeer.ID, newPeer.Addrs[0], peerstore.PermanentAddrTTL)
+			// Connect to the peer
+			if err := host.Connect(ctx, newPeer); err != nil {
+				fmt.Println("Connection failed:", err)
+			}
+			fmt.Println("\nConnected to:", newPeer)
+		}
+		}
+	}
 }
