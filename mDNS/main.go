@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
@@ -39,7 +41,17 @@ import (
 
 var myself host.Host
 var Pb *pubsub.PubSub
-//var Ctx context.Context
+var networkTopics = list.New()
+
+type BaseMessage struct {
+	Body string `json:"body"`
+	Flag int `json:"flag"`
+}
+
+type GetTopicsAckMessage struct {
+	BaseMessage
+	Topics []string `json:"topics"`
+}
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
@@ -101,7 +113,7 @@ func getTopics() []string {
 	return topics
 }
 
-// Get list of peers we connected to a specifiec topic
+// Get list of peers we connected to a specified topic
 func getTopicMembers(topic string) []peer.ID {
 	members := Pb.ListPeers(topic)
 	return members
@@ -110,7 +122,7 @@ func getTopicMembers(topic string) []peer.ID {
 // Initialize new chat with given topic string
 // this node will subscribe to a new messages and discovery for our topic and publish a hello message
 func newTopic(topic string) {
-	sendData := string("hello")
+	sendData := string("hello") // TODO: should be replaced with standardized protocol message
 	// probably don't need to subscribe
 	subscription, err := Pb.Subscribe(topic)
 	if err != nil {
@@ -133,13 +145,21 @@ func writeTopic(topic string) {
 
 	for {
 		fmt.Print("> ")
-		sendData, err := stdReader.ReadString('\n')
+		text, err := stdReader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading from stdin")
 			panic(err)
 		}
-
-		err = Pb.Publish(topic, []byte(sendData))
+		message := &BaseMessage{
+			Body: text,
+			Flag: 0x0,
+		}
+		sendData, err := json.Marshal(message)
+		if err != nil {
+			fmt.Println("Error occurred when marshalling message object")
+			continue
+		}
+		err = Pb.Publish(topic, sendData)
 		if err != nil {
 			fmt.Println("Error occurred when publishing")
 			panic(err)
@@ -224,10 +244,38 @@ func main() {
 				fmt.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
-
-			// Green console colour: 	\x1b[32m
-			// Reset console colour: 	\x1b[0m
-			fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, string(msg.Data))
+			message := &BaseMessage{}
+			err = json.Unmarshal(msg.Data, message)
+			if err != nil {
+				continue
+			}
+			if message.Flag == 0x0 {
+				// Green console colour: 	\x1b[32m
+				// Reset console colour: 	\x1b[0m
+				fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
+			} else if message.Flag == 0x1 {
+				ack := &GetTopicsAckMessage {
+					BaseMessage: BaseMessage{
+						Body: "",
+						Flag: 0x2,
+					},
+					Topics: getTopics(),
+				}
+				sendData, err := json.Marshal(ack)
+				if err != nil {
+					continue
+				}
+				pb.Publish(cfg.RendezvousString, sendData)
+			} else if message.Flag == 0x2 {
+				ack := &GetTopicsAckMessage{}
+				err = json.Unmarshal(msg.Data, ack)
+				if err != nil {
+					continue
+				}
+				for i := 0; i < len(ack.Topics); i++ {
+					networkTopics.PushFront(ack.Topics[i])
+				}
+			}
 		}
 		case newPeer := <- peerChan: {
 			fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
