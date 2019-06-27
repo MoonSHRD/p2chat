@@ -1,6 +1,7 @@
 module github.com/libp2p/go-libp2p-examples
 
 require (
+	github.com/deckarep/golang-set v1.7.1
 	github.com/gogo/protobuf v1.2.1
 	github.com/google/uuid v1.1.1
 	github.com/ipfs/go-datastore v0.0.5

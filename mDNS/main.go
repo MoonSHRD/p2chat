@@ -2,22 +2,23 @@ package main
 
 import (
 	"bufio"
-	"container/list"
 	"context"
 	"crypto/rand"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"time"
+
+	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/libp2p/go-libp2p-pubsub"
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
-	"os"
-	"time"
 )
 
 /*
@@ -41,11 +42,11 @@ import (
 
 var myself host.Host
 var Pb *pubsub.PubSub
-var networkTopics = list.New()
+var networkTopics = mapset.NewSet()
 
 type BaseMessage struct {
 	Body string `json:"body"`
-	Flag int `json:"flag"`
+	Flag int    `json:"flag"`
 }
 
 type GetTopicsAckMessage struct {
@@ -84,7 +85,6 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 	}
 }
 
-
 // Subscribes to a topic and then get messages ..
 func subscribeRead(topic string) {
 	subscription, err := Pb.Subscribe(topic)
@@ -96,7 +96,8 @@ func subscribeRead(topic string) {
 	incomingMessages := make(chan pubsub.Message)
 	readSub(subscription, incomingMessages)
 	select {
-		case msg := <- incomingMessages: {
+	case msg := <-incomingMessages:
+		{
 			addr, err := peer.IDFromBytes(msg.From)
 			if err != nil {
 				fmt.Println("Error occurred when reading message From field...")
@@ -220,7 +221,6 @@ func main() {
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
-
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	if err != nil {
@@ -238,56 +238,58 @@ func main() {
 
 	for {
 		select {
-		case msg := <- incomingMessages: {
-			addr, err := peer.IDFromBytes(msg.From)
-			if err != nil {
-				fmt.Println("Error occurred when reading message From field...")
-				panic(err)
-			}
-			message := &BaseMessage{}
-			err = json.Unmarshal(msg.Data, message)
-			if err != nil {
-				continue
-			}
-			if message.Flag == 0x0 {
-				// Green console colour: 	\x1b[32m
-				// Reset console colour: 	\x1b[0m
-				fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
-			} else if message.Flag == 0x1 {
-				ack := &GetTopicsAckMessage {
-					BaseMessage: BaseMessage{
-						Body: "",
-						Flag: 0x2,
-					},
-					Topics: getTopics(),
+		case msg := <-incomingMessages:
+			{
+				addr, err := peer.IDFromBytes(msg.From)
+				if err != nil {
+					fmt.Println("Error occurred when reading message From field...")
+					panic(err)
 				}
-				sendData, err := json.Marshal(ack)
+				message := &BaseMessage{}
+				err = json.Unmarshal(msg.Data, message)
 				if err != nil {
 					continue
 				}
-				pb.Publish(cfg.RendezvousString, sendData)
-			} else if message.Flag == 0x2 {
-				ack := &GetTopicsAckMessage{}
-				err = json.Unmarshal(msg.Data, ack)
-				if err != nil {
-					continue
-				}
-				for i := 0; i < len(ack.Topics); i++ {
-					networkTopics.PushFront(ack.Topics[i])
+				if message.Flag == 0x0 {
+					// Green console colour: 	\x1b[32m
+					// Reset console colour: 	\x1b[0m
+					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
+				} else if message.Flag == 0x1 {
+					ack := &GetTopicsAckMessage{
+						BaseMessage: BaseMessage{
+							Body: "",
+							Flag: 0x2,
+						},
+						Topics: getTopics(),
+					}
+					sendData, err := json.Marshal(ack)
+					if err != nil {
+						continue
+					}
+					pb.Publish(cfg.RendezvousString, sendData)
+				} else if message.Flag == 0x2 {
+					ack := &GetTopicsAckMessage{}
+					err = json.Unmarshal(msg.Data, ack)
+					if err != nil {
+						continue
+					}
+					for i := 0; i < len(ack.Topics); i++ {
+						networkTopics.Add(ack.Topics[i])
+					}
 				}
 			}
-		}
-		case newPeer := <- peerChan: {
-			fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
+		case newPeer := <-peerChan:
+			{
+				fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
 
-			// Adding peer addresses to local peerstore
-			host.Peerstore().AddAddr(newPeer.ID, newPeer.Addrs[0], peerstore.PermanentAddrTTL)
-			// Connect to the peer
-			if err := host.Connect(ctx, newPeer); err != nil {
-				fmt.Println("Connection failed:", err)
+				// Adding peer addresses to local peerstore
+				host.Peerstore().AddAddr(newPeer.ID, newPeer.Addrs[0], peerstore.PermanentAddrTTL)
+				// Connect to the peer
+				if err := host.Connect(ctx, newPeer); err != nil {
+					fmt.Println("Connection failed:", err)
+				}
+				fmt.Println("\nConnected to:", newPeer)
 			}
-			fmt.Println("\nConnected to:", newPeer)
-		}
 		}
 	}
 }
