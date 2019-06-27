@@ -41,8 +41,9 @@ import (
 */
 
 var myself host.Host
-var Pb *pubsub.PubSub
+var pubSub *pubsub.PubSub
 var networkTopics = mapset.NewSet()
+var serviceTopic string
 
 /*
 	The basic message format of our protocol
@@ -98,7 +99,7 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 
 // Subscribes to a topic and then get messages ..
 func subscribeRead(topic string) {
-	subscription, err := Pb.Subscribe(topic)
+	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
@@ -121,13 +122,13 @@ func subscribeRead(topic string) {
 
 // Get list of topics this node is subscribed to
 func getTopics() []string {
-	topics := Pb.GetTopics()
+	topics := pubSub.GetTopics()
 	return topics
 }
 
 // Get list of peers we connected to a specified topic
 func getTopicMembers(topic string) []peer.ID {
-	members := Pb.ListPeers(topic)
+	members := pubSub.ListPeers(topic)
 	return members
 }
 
@@ -136,14 +137,14 @@ func getTopicMembers(topic string) []peer.ID {
 func newTopic(topic string) {
 	sendData := string("hello") // TODO: should be replaced with standardized protocol message
 	// probably don't need to subscribe
-	subscription, err := Pb.Subscribe(topic)
+	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
 	fmt.Println("subscription:", subscription)
 	time.Sleep(2 * time.Second)
-	err = Pb.Publish(topic, []byte(sendData))
+	err = pubSub.Publish(topic, []byte(sendData))
 	if err != nil {
 		fmt.Println("Error occurred when publishing")
 		panic(err)
@@ -171,7 +172,7 @@ func writeTopic(topic string) {
 			fmt.Println("Error occurred when marshalling message object")
 			continue
 		}
-		err = Pb.Publish(topic, sendData)
+		err = pubSub.Publish(topic, sendData)
 		if err != nil {
 			fmt.Println("Error occurred when publishing")
 			panic(err)
@@ -226,7 +227,7 @@ func main() {
 		panic(err)
 	}
 
-	Pb = pb
+	pubSub = pb
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
@@ -234,6 +235,7 @@ func main() {
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
+	serviceTopic = cfg.RendezvousString
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
@@ -246,6 +248,7 @@ func main() {
 
 	go writeTopic(cfg.RendezvousString)
 	go readSub(subscription, incomingMessages)
+	go getNetworkTopics()
 
 	for {
 		select {
@@ -302,5 +305,20 @@ func main() {
 				fmt.Println("\nConnected to:", newPeer)
 			}
 		}
+	}
+}
+
+func getNetworkTopics() {
+	for {
+		getTopicsMessage := &BaseMessage{
+			Body: "",
+			Flag: 0x1,
+		}
+		sendData, err := json.Marshal(getTopicsMessage)
+		if err != nil {
+			continue
+		}
+		pubSub.Publish(serviceTopic, sendData)
+		time.Sleep(3 * time.Second)
 	}
 }
