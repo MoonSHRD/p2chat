@@ -26,9 +26,9 @@ import (
 	// TODO:
 	0.
 	1.
-	2. Update handlers in p2mobile (getters / setters) e.t.c.
+	2. Update handlers in p2mobile (getters / setters) etc.
 	3. Update export types in p2mobile
-	4. Add exposure functionality with topics (get topics list e.t.c.)
+	4. Add exposure functionality with topics (get topics list etc.)
 	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
 
 
@@ -98,24 +98,21 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 }
 
 // Subscribes to a topic and then get messages ..
-func subscribeRead(topic string) {
+func newTopic(topic string) {
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
-	readSub(subscription, incomingMessages)
-	select {
-	case msg := <-incomingMessages:
-		{
-			addr, err := peer.IDFromBytes(msg.From)
-			if err != nil {
-				fmt.Println("Error occurred when reading message From field...")
-				panic(err)
+	go readSub(subscription, incomingMessages)
+	for {
+		select {
+		case msg := <-incomingMessages:
+			{
+				handleIncomingMessage(msg)
 			}
-			fmt.Printf("\x1b[32m%s\x1b[0m> %s", addr, string(msg.Data))
 		}
 	}
 }
@@ -130,25 +127,6 @@ func getTopics() []string {
 func getTopicMembers(topic string) []peer.ID {
 	members := pubSub.ListPeers(topic)
 	return members
-}
-
-// Initialize new chat with given topic string
-// this node will subscribe to a new messages and discovery for our topic and publish a hello message
-func newTopic(topic string) {
-	sendData := string("hello") // TODO: should be replaced with standardized protocol message
-	// probably don't need to subscribe
-	subscription, err := pubSub.Subscribe(topic)
-	if err != nil {
-		fmt.Println("Error occurred when subscribing to topic")
-		panic(err)
-	}
-	fmt.Println("subscription:", subscription)
-	time.Sleep(2 * time.Second)
-	err = pubSub.Publish(topic, []byte(sendData))
-	if err != nil {
-		fmt.Println("Error occurred when publishing")
-		panic(err)
-	}
 }
 
 // Write messages to subscription (topic)
@@ -221,20 +199,18 @@ func main() {
 
 	myself = host
 
-	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(false))
+	pubSub, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
 		panic(err)
 	}
-
-	pubSub = pb
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
-	subscription, err := pb.Subscribe(cfg.RendezvousString)
+	subscription, err := pubSub.Subscribe(cfg.RendezvousString)
 	serviceTopic = cfg.RendezvousString
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -254,43 +230,7 @@ func main() {
 		select {
 		case msg := <-incomingMessages:
 			{
-				addr, err := peer.IDFromBytes(msg.From)
-				if err != nil {
-					fmt.Println("Error occurred when reading message From field...")
-					panic(err)
-				}
-				message := &BaseMessage{}
-				err = json.Unmarshal(msg.Data, message)
-				if err != nil {
-					continue
-				}
-				if message.Flag == 0x0 {
-					// Green console colour: 	\x1b[32m
-					// Reset console colour: 	\x1b[0m
-					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
-				} else if message.Flag == 0x1 {
-					ack := &GetTopicsAckMessage{
-						BaseMessage: BaseMessage{
-							Body: "",
-							Flag: 0x2,
-						},
-						Topics: getTopics(),
-					}
-					sendData, err := json.Marshal(ack)
-					if err != nil {
-						continue
-					}
-					pb.Publish(cfg.RendezvousString, sendData)
-				} else if message.Flag == 0x2 {
-					ack := &GetTopicsAckMessage{}
-					err = json.Unmarshal(msg.Data, ack)
-					if err != nil {
-						continue
-					}
-					for i := 0; i < len(ack.Topics); i++ {
-						networkTopics.Add(ack.Topics[i])
-					}
-				}
+				handleIncomingMessage(msg)
 			}
 		case newPeer := <-peerChan:
 			{
@@ -318,7 +258,48 @@ func getNetworkTopics() {
 		if err != nil {
 			continue
 		}
+		time.Sleep(2 * time.Second)
 		pubSub.Publish(serviceTopic, sendData)
 		time.Sleep(3 * time.Second)
+	}
+}
+
+func handleIncomingMessage(msg pubsub.Message) {
+	addr, err := peer.IDFromBytes(msg.From)
+	if err != nil {
+		fmt.Println("Error occurred when reading message From field...")
+		panic(err)
+	}
+	message := &BaseMessage{}
+	err = json.Unmarshal(msg.Data, message)
+	if err != nil {
+		return
+	}
+	if message.Flag == 0x0 {
+		// Green console colour: 	\x1b[32m
+		// Reset console colour: 	\x1b[0m
+		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
+	} else if message.Flag == 0x1 {
+		ack := &GetTopicsAckMessage{
+			BaseMessage: BaseMessage{
+				Body: "",
+				Flag: 0x2,
+			},
+			Topics: getTopics(),
+		}
+		sendData, err := json.Marshal(ack)
+		if err != nil {
+			return
+		}
+		pubSub.Publish(serviceTopic, sendData)
+	} else if message.Flag == 0x2 {
+		ack := &GetTopicsAckMessage{}
+		err = json.Unmarshal(msg.Data, ack)
+		if err != nil {
+			return
+		}
+		for i := 0; i < len(ack.Topics); i++ {
+			networkTopics.Add(ack.Topics[i])
+		}
 	}
 }
