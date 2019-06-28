@@ -199,18 +199,20 @@ func main() {
 
 	myself = host
 
-	pubSub, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
+	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
 	if err != nil {
 		fmt.Println("Error occurred when create PubSub")
 		panic(err)
 	}
+
+	pubSub = pb
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
 	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
-	subscription, err := pubSub.Subscribe(cfg.RendezvousString)
+	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	serviceTopic = cfg.RendezvousString
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -291,7 +293,10 @@ func handleIncomingMessage(msg pubsub.Message) {
 		if err != nil {
 			return
 		}
-		pubSub.Publish(serviceTopic, sendData)
+		go func() {
+			time.Sleep(1 * time.Second)
+			pubSub.Publish(serviceTopic, sendData)
+		}()
 	} else if message.Flag == 0x2 {
 		ack := &GetTopicsAckMessage{}
 		err = json.Unmarshal(msg.Data, ack)
