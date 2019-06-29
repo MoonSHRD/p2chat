@@ -21,7 +21,7 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 }
 
 //Initialize the MDNS service
-func initMDNS(ctx context.Context, thishost host.Host, rendezvous string) chan peer.AddrInfo {
+func InitMDNS(ctx context.Context, thishost host.Host, rendezvous string) chan peer.AddrInfo {
 	// An hour might be a long long period in practical applications. But this is fine for us
 	ser, err := discovery.NewMdnsService(ctx, thishost, time.Hour, rendezvous)
 	if err != nil {
