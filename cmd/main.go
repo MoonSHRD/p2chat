@@ -19,6 +19,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
+	"github.com/MoonSHRD/p2chat/api"
+	"github.com/MoonSHRD/p2chat/internal"
 )
 
 /*
@@ -44,27 +46,6 @@ var myself host.Host
 var pubSub *pubsub.PubSub
 var networkTopics = mapset.NewSet()
 var serviceTopic string
-
-/*
-	The basic message format of our protocol
-	Flags:
-		- 0x0: Generic message
-		- 0x1: Request to get existing PubSub topics on the network
-		- 0x2: Answer to the request for topics (ack)
-*/
-type BaseMessage struct {
-	Body string `json:"body"`
-	Flag int    `json:"flag"`
-}
-
-/*
-	The format of the message to answer of request for topics
-	Flag: 0x2
-*/
-type GetTopicsAckMessage struct {
-	BaseMessage
-	Topics []string `json:"topics"`
-}
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
