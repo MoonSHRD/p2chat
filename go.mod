@@ -1,4 +1,4 @@
-module github.com/libp2p/go-libp2p-examples
+module github.com/MoonSHRD/p2chat
 
 require (
 	github.com/deckarep/golang-set v1.7.1
