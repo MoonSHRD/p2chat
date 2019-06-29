@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	api "github.com/MoonSHRD/p2chat/api"
+	internal "github.com/MoonSHRD/p2chat/internal"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -19,8 +21,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/protocol"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/multiformats/go-multiaddr"
-	"github.com/MoonSHRD/p2chat/api"
-	"github.com/MoonSHRD/p2chat/internal"
 )
 
 /*
@@ -122,7 +122,7 @@ func writeTopic(topic string) {
 			fmt.Println("Error reading from stdin")
 			panic(err)
 		}
-		message := &BaseMessage{
+		message := &api.BaseMessage{
 			Body: text,
 			Flag: 0x0,
 		}
@@ -190,7 +190,7 @@ func main() {
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
-	peerChan := initMDNS(ctx, host, cfg.RendezvousString)
+	peerChan := internal.InitMDNS(ctx, host, cfg.RendezvousString)
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
@@ -233,7 +233,7 @@ func main() {
 
 func getNetworkTopics() {
 	for {
-		getTopicsMessage := &BaseMessage{
+		getTopicsMessage := &api.BaseMessage{
 			Body: "",
 			Flag: 0x1,
 		}
@@ -253,7 +253,7 @@ func handleIncomingMessage(msg pubsub.Message) {
 		fmt.Println("Error occurred when reading message From field...")
 		panic(err)
 	}
-	message := &BaseMessage{}
+	message := &api.BaseMessage{}
 	err = json.Unmarshal(msg.Data, message)
 	if err != nil {
 		return
@@ -263,8 +263,8 @@ func handleIncomingMessage(msg pubsub.Message) {
 		// Reset console colour: 	\x1b[0m
 		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
 	} else if message.Flag == 0x1 {
-		ack := &GetTopicsAckMessage{
-			BaseMessage: BaseMessage{
+		ack := &api.GetTopicsAckMessage{
+			BaseMessage: api.BaseMessage{
 				Body: "",
 				Flag: 0x2,
 			},
@@ -279,7 +279,7 @@ func handleIncomingMessage(msg pubsub.Message) {
 			pubSub.Publish(serviceTopic, sendData)
 		}()
 	} else if message.Flag == 0x2 {
-		ack := &GetTopicsAckMessage{}
+		ack := &api.GetTopicsAckMessage{}
 		err = json.Unmarshal(msg.Data, ack)
 		if err != nil {
 			return
