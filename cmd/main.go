@@ -29,9 +29,9 @@ import (
 
 /*
 
-	// TODO:
+	// TODO: Update Readme & checkout and replace better comments
 
-	1.
+
 
 
 */
@@ -46,14 +46,13 @@ var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
 var serviceTopic string
 
-// TODO : rework handler
+
 var handler internal.Handler
 
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
 //
-
 func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
 	ctx:= globalCtx
 	for {
@@ -99,7 +98,7 @@ func newTopic(topic string) {
 	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
 
-  //TODO: rework context
+
 	go readSub(subscription, incomingMessages)
 	for {
 		select {
@@ -153,7 +152,6 @@ func writeTopic(topic string) {
 		}
 		message := &api.BaseMessage{
 			Body: text,
-      // TODO : refactor flags(?)
 			Flag: api.FLAG_GENERIC_MESSAGE,
 		}
 
@@ -286,7 +284,7 @@ MainLoop:
 }
 
 
-//TODO : rework context, rework name
+
 func getNetworkTopics() {
 	ctx:= globalCtx
 	handler.RequestNetworkTopics(ctx)
