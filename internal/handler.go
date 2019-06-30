@@ -3,7 +3,8 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"time"
+	"sync"
+
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
@@ -26,6 +27,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Se
 }
 
 func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
+	var pbMutex sync.Mutex
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
 		fmt.Println("Error occurred when reading message From field...")
@@ -36,15 +38,16 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
 	if err != nil {
 		return
 	}
-	if message.Flag == 0x0 {
+	switch message.Flag {
+	case api.FLAG_GENERIC_MESSAGE:
 		// Green console colour: 	\x1b[32m
 		// Reset console colour: 	\x1b[0m
 		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
-	} else if message.Flag == 0x1 {
+	case api.FLAG_TOPICS_REQUEST:
 		ack := &api.GetTopicsAckMessage{
 			BaseMessage: api.BaseMessage{
 				Body: "",
-				Flag: 0x2,
+				Flag: api.FLAG_TOPICS_RESPONSE,
 			},
 			Topics: h.getTopics(),
 		}
@@ -53,10 +56,11 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
 			return
 		}
 		go func() {
-			time.Sleep(1 * time.Second)
+			pbMutex.Lock()
 			h.pb.Publish(h.serviceTopic, sendData)
+			pbMutex.Unlock()
 		}()
-	} else if message.Flag == 0x2 {
+	case api.FLAG_TOPICS_RESPONSE:
 		ack := &api.GetTopicsAckMessage{}
 		err = json.Unmarshal(msg.Data, ack)
 		if err != nil {
@@ -65,6 +69,8 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
 		for i := 0; i < len(ack.Topics); i++ {
 			h.networkTopics.Add(ack.Topics[i])
 		}
+	default:
+		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
 }
 
