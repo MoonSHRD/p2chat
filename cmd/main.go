@@ -262,11 +262,12 @@ func handleIncomingMessage(msg pubsub.Message) {
 	if err != nil {
 		return
 	}
-	if message.Flag == 0x0 {
+	switch message.Flag {
+	case 0x0:
 		// Green console colour: 	\x1b[32m
 		// Reset console colour: 	\x1b[0m
 		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
-	} else if message.Flag == 0x1 {
+	case 0x1:
 		ack := &api.GetTopicsAckMessage{
 			BaseMessage: api.BaseMessage{
 				Body: "",
@@ -283,7 +284,7 @@ func handleIncomingMessage(msg pubsub.Message) {
 			pubSub.Publish(serviceTopic, sendData)
 			pbMutex.Unlock()
 		}()
-	} else if message.Flag == 0x2 {
+	case 0x2:
 		ack := &api.GetTopicsAckMessage{}
 		err = json.Unmarshal(msg.Data, ack)
 		if err != nil {
@@ -292,5 +293,7 @@ func handleIncomingMessage(msg pubsub.Message) {
 		for i := 0; i < len(ack.Topics); i++ {
 			networkTopics.Add(ack.Topics[i])
 		}
+	default:
+		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
 }
