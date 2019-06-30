@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	api "github.com/MoonSHRD/p2chat/api"
@@ -44,6 +45,7 @@ import (
 
 var myself host.Host
 var pubSub *pubsub.PubSub
+var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
 var serviceTopic string
 
@@ -232,18 +234,20 @@ func main() {
 }
 
 func getNetworkTopics() {
-	for {
-		getTopicsMessage := &api.BaseMessage{
-			Body: "",
-			Flag: 0x1,
-		}
-		sendData, err := json.Marshal(getTopicsMessage)
-		if err != nil {
-			continue
-		}
-		time.Sleep(2 * time.Second)
+	getTopicsMessage := &api.BaseMessage{
+		Body: "",
+		Flag: 0x1,
+	}
+	sendData, err := json.Marshal(getTopicsMessage)
+	if err != nil {
+		panic(err)
+	}
+	t := time.NewTicker(3 * time.Second)
+	defer t.Stop()
+	for range t.C {
+		pbMutex.Lock()
 		pubSub.Publish(serviceTopic, sendData)
-		time.Sleep(3 * time.Second)
+		pbMutex.Unlock()
 	}
 }
 
@@ -275,8 +279,9 @@ func handleIncomingMessage(msg pubsub.Message) {
 			return
 		}
 		go func() {
-			time.Sleep(1 * time.Second)
+			pbMutex.Lock()
 			pubSub.Publish(serviceTopic, sendData)
+			pbMutex.Unlock()
 		}()
 	} else if message.Flag == 0x2 {
 		ack := &api.GetTopicsAckMessage{}
