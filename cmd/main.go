@@ -141,7 +141,7 @@ func writeTopic(ctx context.Context, topic string) {
 		}
 		message := &api.BaseMessage{
 			Body: text,
-			Flag: 0x0,
+			Flag: api.FLAG_GENERIC_MESSAGE,
 		}
 		sendData, err := json.Marshal(message)
 		if err != nil {
@@ -261,7 +261,7 @@ MainLoop:
 func getNetworkTopics(ctx context.Context) {
 	getTopicsMessage := &api.BaseMessage{
 		Body: "",
-		Flag: 0x1,
+		Flag: api.FLAG_TOPICS_REQUEST,
 	}
 	sendData, err := json.Marshal(getTopicsMessage)
 	if err != nil {
@@ -293,15 +293,15 @@ func handleIncomingMessage(msg pubsub.Message) {
 		return
 	}
 	switch message.Flag {
-	case 0x0:
+	case api.FLAG_GENERIC_MESSAGE:
 		// Green console colour: 	\x1b[32m
 		// Reset console colour: 	\x1b[0m
 		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
-	case 0x1:
+	case api.FLAG_TOPICS_REQUEST:
 		ack := &api.GetTopicsAckMessage{
 			BaseMessage: api.BaseMessage{
 				Body: "",
-				Flag: 0x2,
+				Flag: api.FLAG_TOPICS_RESPONSE,
 			},
 			Topics: getTopics(),
 		}
@@ -314,7 +314,7 @@ func handleIncomingMessage(msg pubsub.Message) {
 			pubSub.Publish(serviceTopic, sendData)
 			pbMutex.Unlock()
 		}()
-	case 0x2:
+	case api.FLAG_TOPICS_RESPONSE:
 		ack := &api.GetTopicsAckMessage{}
 		err = json.Unmarshal(msg.Data, ack)
 		if err != nil {
