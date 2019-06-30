@@ -4,8 +4,8 @@ package api
 	The basic message format of our protocol
 	Flags:
 		- 0x0: Generic message
-		- 0x1: Request to get existing PubSub topics on the network
-		- 0x2: Answer to the request for topics (ack)
+		- 0x1: Request to get existing PubSub topics at the network
+		- 0x2: Response to the request for topics (ack)
 */
 
 const (
@@ -25,7 +25,7 @@ type BaseMessage struct {
 	The format of the message to answer of request for topics
 	Flag: 0x2
 */
-type GetTopicsAckMessage struct {
+type GetTopicsRespondMessage struct {
 	BaseMessage
 	Topics []string `json:"topics"`
 }
