@@ -116,7 +116,8 @@ func newTopic(topic string) {
 
 
 // Get list of topics this node is subscribed to
-func getTopics() []string {
+// Export func
+func GetTopics() []string {
 	topics := pubSub.GetTopics()
 	return topics
 }
@@ -288,24 +289,5 @@ MainLoop:
 //TODO : rework context, rework name
 func getNetworkTopics() {
 	ctx:= globalCtx
-	getTopicsMessage := &api.BaseMessage{
-		Body: "",
-		Flag: api.FLAG_TOPICS_REQUEST,
-	}
-	sendData, err := json.Marshal(getTopicsMessage)
-	if err != nil {
-		panic(err)
-	}
-	t := time.NewTicker(3 * time.Second)
-	defer t.Stop()
-	for range t.C {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		pbMutex.Lock()
-		pubSub.Publish(serviceTopic, sendData)
-		pbMutex.Unlock()
-	}
+	handler.RequestNetworkTopics(ctx)
 }
