@@ -6,3 +6,4 @@
 /.vscode
 /mDNS/mDNS
 /vendor
+./cmd/cmd
