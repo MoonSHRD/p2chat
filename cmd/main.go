@@ -32,18 +32,15 @@ import (
 	// TODO:
 
 	1.
-	2. Update handlers in p2mobile (getters / setters) etc.
-	3. Update export types in p2mobile
 
-	
-
-
-	
 
 */
 
 var myself host.Host
 var pubSub *pubsub.PubSub
+
+var globalCtx context.Context
+var globalCtxCancel context.CancelFunc
 
 var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
@@ -56,8 +53,9 @@ var handler internal.Handler
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
 //
-//TODO : replace context into separate getContext, probably replace ctx from input args
-func readSub(ctx context.Context, subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
+
+func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
+	ctx:= globalCtx
 	for {
 		select {
 		case <-ctx.Done():
@@ -91,9 +89,8 @@ func readSub(ctx context.Context, subscription *pubsub.Subscription, incomingMes
 }
 
 // Subscribes to a topic and then get messages ..
-//TODO: rework context
-
-func newTopic(ctx context.Context, topic string) {
+func newTopic(topic string) {
+	ctx:= globalCtx
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -103,7 +100,7 @@ func newTopic(ctx context.Context, topic string) {
 	incomingMessages := make(chan pubsub.Message)
 
   //TODO: rework context
-	go readSub(ctx, subscription, incomingMessages)
+	go readSub(subscription, incomingMessages)
 	for {
 		select {
 		case <-ctx.Done():
@@ -133,9 +130,8 @@ func getTopicMembers(topic string) []peer.ID {
 
 // Write messages to subscription (topic)
 // NOTE: we don't need to be subscribed to publish something
-
-//TODO: rework context
-func writeTopic(ctx context.Context, topic string) {
+func writeTopic(topic string) {
+	ctx:= globalCtx
 	stdReader := bufio.NewReader(os.Stdin)
 	for {
 		select {
@@ -146,7 +142,7 @@ func writeTopic(ctx context.Context, topic string) {
 		fmt.Print("> ")
 		text, err := stdReader.ReadString('\n')
 		if err != nil {
-      
+
 			if err == io.EOF {
 				break
 			}
@@ -188,6 +184,10 @@ func main() {
 
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
+	globalCtx = ctx
+	globalCtxCancel = ctxCancel
+
+
 
 	r := rand.Reader
 
@@ -222,6 +222,7 @@ func main() {
 		panic(err)
 	}
 
+	// Set global PubSub object
 	pubSub = pb
 
   // TODO: add comment / docs what is that
@@ -247,13 +248,11 @@ func main() {
 
 
 	go func() {
-    //TODO : rework context
-		writeTopic(ctx, cfg.RendezvousString)
+		writeTopic(cfg.RendezvousString)
 		ctxCancel()
 	}()
-	go readSub(ctx, subscription, incomingMessages)
-  //TODO : rework context
-	go getNetworkTopics(ctx)
+	go readSub(subscription, incomingMessages)
+	go getNetworkTopics()
 
 MainLoop:
 	for {
@@ -284,8 +283,11 @@ MainLoop:
 	}
 	fmt.Println("\nBye")
 }
+
+
 //TODO : rework context, rework name
-func getNetworkTopics(ctx context.Context) {
+func getNetworkTopics() {
+	ctx:= globalCtx
 	getTopicsMessage := &api.BaseMessage{
 		Body: "",
 		Flag: api.FLAG_TOPICS_REQUEST,
