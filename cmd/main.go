@@ -7,7 +7,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+
+	"io"
 	"os"
+	"sync"
+
 	"time"
 
 	api "github.com/MoonSHRD/p2chat/api"
@@ -26,33 +30,40 @@ import (
 /*
 
 	// TODO:
-	0.
+
 	1.
 	2. Update handlers in p2mobile (getters / setters) etc.
 	3. Update export types in p2mobile
-	4. Add exposure functionality with topics (get topics list etc.)
-	5. Add message signing and work with identity (pubsub.WithMessageSigning(TRUE)), try topic validators (??)
+
+	
 
 
-	//------------------------------
-
-	// TODO: -- in this file --
-	1. newTopic function
-	2. getTopic list (probably also getTopics across network?)
+	
 
 */
 
 var myself host.Host
 var pubSub *pubsub.PubSub
+
+var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
 var serviceTopic string
+
+// TODO : rework handler
 var handler internal.Handler
+
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
-// it could be replaced by getting global Pb object..?
-func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
+//
+//TODO : replace context into separate getContext, probably replace ctx from input args
+func readSub(ctx context.Context, subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
 			fmt.Println("Error reading from buffer")
@@ -80,7 +91,9 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 }
 
 // Subscribes to a topic and then get messages ..
-func newTopic(topic string) {
+//TODO: rework context
+
+func newTopic(ctx context.Context, topic string) {
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -88,16 +101,29 @@ func newTopic(topic string) {
 	}
 	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
-	go readSub(subscription, incomingMessages)
+
+  //TODO: rework context
+	go readSub(ctx, subscription, incomingMessages)
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case msg := <-incomingMessages:
 			{
 				handler.HandleIncomingMessage(msg)
+
 			}
 		}
 	}
 }
+
+
+// Get list of topics this node is subscribed to
+func getTopics() []string {
+	topics := pubSub.GetTopics()
+	return topics
+}
+
 
 // Get list of peers we connected to a specified topic
 func getTopicMembers(topic string) []peer.ID {
@@ -107,20 +133,33 @@ func getTopicMembers(topic string) []peer.ID {
 
 // Write messages to subscription (topic)
 // NOTE: we don't need to be subscribed to publish something
-func writeTopic(topic string) {
-	stdReader := bufio.NewReader(os.Stdin)
 
+//TODO: rework context
+func writeTopic(ctx context.Context, topic string) {
+	stdReader := bufio.NewReader(os.Stdin)
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		fmt.Print("> ")
 		text, err := stdReader.ReadString('\n')
 		if err != nil {
+      
+			if err == io.EOF {
+				break
+			}
+
 			fmt.Println("Error reading from stdin")
 			panic(err)
 		}
 		message := &api.BaseMessage{
 			Body: text,
-			Flag: 0x0,
+      // TODO : refactor flags(?)
+			Flag: api.FLAG_GENERIC_MESSAGE,
 		}
+
 		sendData, err := json.Marshal(message)
 		if err != nil {
 			fmt.Println("Error occurred when marshalling message object")
@@ -147,7 +186,9 @@ func main() {
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
 
-	ctx := context.Background()
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+
 	r := rand.Reader
 
 	// Creates a new RSA key pair for this wrapped_host.
@@ -183,7 +224,9 @@ func main() {
 
 	pubSub = pb
 
+  // TODO: add comment / docs what is that
 	handler = internal.NewHandler(pb, serviceTopic, &networkTopics)
+
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
@@ -202,12 +245,21 @@ func main() {
 
 	incomingMessages := make(chan pubsub.Message)
 
-	go writeTopic(cfg.RendezvousString)
-	go readSub(subscription, incomingMessages)
-	go getNetworkTopics()
 
+	go func() {
+    //TODO : rework context
+		writeTopic(ctx, cfg.RendezvousString)
+		ctxCancel()
+	}()
+	go readSub(ctx, subscription, incomingMessages)
+  //TODO : rework context
+	go getNetworkTopics(ctx)
+
+MainLoop:
 	for {
 		select {
+		case <-ctx.Done():
+			break MainLoop
 		case msg := <-incomingMessages:
 			{
 				handler.HandleIncomingMessage(msg)
@@ -226,20 +278,81 @@ func main() {
 			}
 		}
 	}
+
+	if err := host.Close(); err != nil {
+		fmt.Println("\nClosing host failed:", err)
+	}
+	fmt.Println("\nBye")
+}
+//TODO : rework context, rework name
+func getNetworkTopics(ctx context.Context) {
+	getTopicsMessage := &api.BaseMessage{
+		Body: "",
+		Flag: api.FLAG_TOPICS_REQUEST,
+	}
+	sendData, err := json.Marshal(getTopicsMessage)
+	if err != nil {
+		panic(err)
+	}
+	t := time.NewTicker(3 * time.Second)
+	defer t.Stop()
+	for range t.C {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		pbMutex.Lock()
+		pubSub.Publish(serviceTopic, sendData)
+		pbMutex.Unlock()
+	}
 }
 
-func getNetworkTopics() {
-	for {
-		getTopicsMessage := &api.BaseMessage{
-			Body: "",
-			Flag: 0x1,
+// TODO : put this to internal package
+func handleIncomingMessage(msg pubsub.Message) {
+	addr, err := peer.IDFromBytes(msg.From)
+	if err != nil {
+		fmt.Println("Error occurred when reading message From field...")
+		panic(err)
+	}
+	message := &api.BaseMessage{}
+	err = json.Unmarshal(msg.Data, message)
+	if err != nil {
+		return
+	}
+	switch message.Flag {
+	case api.FLAG_GENERIC_MESSAGE:
+		// Green console colour: 	\x1b[32m
+		// Reset console colour: 	\x1b[0m
+		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
+	case api.FLAG_TOPICS_REQUEST:
+		ack := &api.GetTopicsAckMessage{
+			BaseMessage: api.BaseMessage{
+				Body: "",
+				Flag: api.FLAG_TOPICS_RESPONSE,
+			},
+			Topics: getTopics(),
 		}
-		sendData, err := json.Marshal(getTopicsMessage)
+		sendData, err := json.Marshal(ack)
 		if err != nil {
-			continue
+			return
 		}
-		time.Sleep(2 * time.Second)
-		pubSub.Publish(serviceTopic, sendData)
-		time.Sleep(3 * time.Second)
+		go func() {
+			pbMutex.Lock()
+			pubSub.Publish(serviceTopic, sendData)
+			pbMutex.Unlock()
+		}()
+	case api.FLAG_TOPICS_RESPONSE:
+		ack := &api.GetTopicsAckMessage{}
+		err = json.Unmarshal(msg.Data, ack)
+		if err != nil {
+			return
+		}
+		for i := 0; i < len(ack.Topics); i++ {
+			networkTopics.Add(ack.Topics[i])
+		}
+	default:
+		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
+
 	}
 }
