@@ -167,3 +167,9 @@ By default, you will able to invoke any experted functions (those one, which sta
 If you want be able to invoke any go functions from java side, you need to export them via renaming exported functions with Capital Letter like this `Start()`. Note, if you want to export functions with an unusual type, than you need to create a structure in go with this type and export it as well.
 
 From java side just type `import p2mobile.*;` and then invoke like `P2mobile.Start()`
+
+## Building
+```bash
+$ cd cmd
+$ go build
+```
