@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -52,8 +53,13 @@ var serviceTopic string
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
 // it could be replaced by getting global Pb object..?
-func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
+func readSub(ctx context.Context, subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
 			fmt.Println("Error reading from buffer")
@@ -81,7 +87,7 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 }
 
 // Subscribes to a topic and then get messages ..
-func newTopic(topic string) {
+func newTopic(ctx context.Context, topic string) {
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -89,9 +95,11 @@ func newTopic(topic string) {
 	}
 	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
-	go readSub(subscription, incomingMessages)
+	go readSub(ctx, subscription, incomingMessages)
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case msg := <-incomingMessages:
 			{
 				handleIncomingMessage(msg)
@@ -114,13 +122,20 @@ func getTopicMembers(topic string) []peer.ID {
 
 // Write messages to subscription (topic)
 // NOTE: we don't need to be subscribed to publish something
-func writeTopic(topic string) {
+func writeTopic(ctx context.Context, topic string) {
 	stdReader := bufio.NewReader(os.Stdin)
-
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		fmt.Print("> ")
 		text, err := stdReader.ReadString('\n')
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			fmt.Println("Error reading from stdin")
 			panic(err)
 		}
@@ -154,7 +169,7 @@ func main() {
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
 
-	ctx := context.Background()
+	ctx, ctxCancel := context.WithCancel(context.Background())
 	r := rand.Reader
 
 	// Creates a new RSA key pair for this wrapped_host.
@@ -207,12 +222,18 @@ func main() {
 
 	incomingMessages := make(chan pubsub.Message)
 
-	go writeTopic(cfg.RendezvousString)
-	go readSub(subscription, incomingMessages)
-	go getNetworkTopics()
+	go func() {
+		writeTopic(ctx, cfg.RendezvousString)
+		ctxCancel()
+	}()
+	go readSub(ctx, subscription, incomingMessages)
+	go getNetworkTopics(ctx)
 
+MainLoop:
 	for {
 		select {
+		case <-ctx.Done():
+			break MainLoop
 		case msg := <-incomingMessages:
 			{
 				handleIncomingMessage(msg)
@@ -231,9 +252,13 @@ func main() {
 			}
 		}
 	}
+	if err := host.Close(); err != nil {
+		fmt.Println("\nClosing host failed:", err)
+	}
+	fmt.Println("\nBye")
 }
 
-func getNetworkTopics() {
+func getNetworkTopics(ctx context.Context) {
 	getTopicsMessage := &api.BaseMessage{
 		Body: "",
 		Flag: 0x1,
@@ -245,6 +270,11 @@ func getNetworkTopics() {
 	t := time.NewTicker(3 * time.Second)
 	defer t.Stop()
 	for range t.C {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		pbMutex.Lock()
 		pubSub.Publish(serviceTopic, sendData)
 		pbMutex.Unlock()
