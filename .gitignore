@@ -3,3 +3,8 @@
 *.jar
 *.aar
 /.idea
+/.vscode
+/mDNS/mDNS
+/vendor
+./cmd/cmd
+/cmd/cmd
