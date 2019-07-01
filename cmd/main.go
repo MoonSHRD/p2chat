@@ -46,15 +46,13 @@ var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
 var serviceTopic string
 
-
 var handler internal.Handler
-
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
 //
 func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub.Message) {
-	ctx:= globalCtx
+	ctx := globalCtx
 	for {
 		select {
 		case <-ctx.Done():
@@ -89,7 +87,7 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 
 // Subscribes to a topic and then get messages ..
 func newTopic(topic string) {
-	ctx:= globalCtx
+	ctx := globalCtx
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
 		fmt.Println("Error occurred when subscribing to topic")
@@ -97,7 +95,6 @@ func newTopic(topic string) {
 	}
 	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
-
 
 	go readSub(subscription, incomingMessages)
 	for {
@@ -113,25 +110,10 @@ func newTopic(topic string) {
 	}
 }
 
-
-// Get list of topics this node is subscribed to
-// Export func
-func GetTopics() []string {
-	topics := pubSub.GetTopics()
-	return topics
-}
-
-
-// Get list of peers we connected to a specified topic
-func getTopicMembers(topic string) []peer.ID {
-	members := pubSub.ListPeers(topic)
-	return members
-}
-
 // Write messages to subscription (topic)
 // NOTE: we don't need to be subscribed to publish something
 func writeTopic(topic string) {
-	ctx:= globalCtx
+	ctx := globalCtx
 	stdReader := bufio.NewReader(os.Stdin)
 	for {
 		select {
@@ -181,12 +163,9 @@ func main() {
 
 	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
 
-
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	globalCtx = ctx
 	globalCtxCancel = ctxCancel
-
-
 
 	r := rand.Reader
 
@@ -224,9 +203,7 @@ func main() {
 	// Set global PubSub object
 	pubSub = pb
 
-  // TODO: add comment / docs what is that
 	handler = internal.NewHandler(pb, serviceTopic, &networkTopics)
-
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
@@ -245,7 +222,6 @@ func main() {
 
 	incomingMessages := make(chan pubsub.Message)
 
-
 	go func() {
 		writeTopic(cfg.RendezvousString)
 		ctxCancel()
@@ -253,7 +229,7 @@ func main() {
 	go readSub(subscription, incomingMessages)
 	go getNetworkTopics()
 
-MainLoop:
+MainLoop: // goto mark? UGLY
 	for {
 		select {
 		case <-ctx.Done():
@@ -283,9 +259,7 @@ MainLoop:
 	fmt.Println("\nBye")
 }
 
-
-
 func getNetworkTopics() {
-	ctx:= globalCtx
+	ctx := globalCtx
 	handler.RequestNetworkTopics(ctx)
 }
