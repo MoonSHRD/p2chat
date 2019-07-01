@@ -1,24 +1,24 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
-	"context"
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
 	peer "github.com/libp2p/go-libp2p-peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
-
 )
 
+// Handler is a network handler, which handle on incoming network events (such as message)
 type Handler struct {
 	pb            *pubsub.PubSub
 	serviceTopic  string
 	networkTopics mapset.Set
-	pbMutex				sync.Mutex
+	pbMutex       sync.Mutex
 }
 
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Set) Handler {
@@ -30,7 +30,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Se
 }
 
 func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
-//	var pbMutex sync.Mutex
+	//	var pbMutex sync.Mutex
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
 		fmt.Println("Error occurred when reading message From field...")
