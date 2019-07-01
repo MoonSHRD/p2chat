@@ -21,6 +21,7 @@ type Handler struct {
 	pbMutex       sync.Mutex
 }
 
+// TextMessage is more end-user model of regular text messages
 type TextMessage struct {
 	Body string
 	From peer.ID
