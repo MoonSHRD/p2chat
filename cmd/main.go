@@ -15,7 +15,7 @@ import (
 	"time"
 
 	api "github.com/MoonSHRD/p2chat/api"
-	internal "github.com/MoonSHRD/p2chat/internal"
+	pkg "github.com/MoonSHRD/p2chat/pkg"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -46,7 +46,7 @@ var pbMutex sync.Mutex
 var networkTopics = mapset.NewSet()
 var serviceTopic string
 
-var handler internal.Handler
+var handler pkg.Handler
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
@@ -103,7 +103,7 @@ func newTopic(topic string) {
 			return
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg, func(textMessage internal.TextMessage) {
+				handler.HandleIncomingMessage(msg, func(textMessage pkg.TextMessage) {
 					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
 				})
 			}
@@ -204,11 +204,11 @@ func main() {
 	// Set global PubSub object
 	pubSub = pb
 
-	handler = internal.NewHandler(pb, serviceTopic, &networkTopics)
+	handler = pkg.NewHandler(pb, serviceTopic, &networkTopics)
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
-	peerChan := internal.InitMDNS(ctx, host, cfg.RendezvousString)
+	peerChan := pkg.InitMDNS(ctx, host, cfg.RendezvousString)
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
@@ -237,7 +237,7 @@ MainLoop:
 			break MainLoop
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg, func(textMessage internal.TextMessage) {
+				handler.HandleIncomingMessage(msg, func(textMessage pkg.TextMessage) {
 					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
 				})
 			}
