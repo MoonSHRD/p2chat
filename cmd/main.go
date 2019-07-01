@@ -103,8 +103,9 @@ func newTopic(topic string) {
 			return
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg)
-
+				handler.HandleIncomingMessage(msg, func(textMessage internal.TextMessage) {
+					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
+				})
 			}
 		}
 	}
@@ -229,14 +230,16 @@ func main() {
 	go readSub(subscription, incomingMessages)
 	go getNetworkTopics()
 
-MainLoop: // goto mark? UGLY
+MainLoop:
 	for {
 		select {
 		case <-ctx.Done():
 			break MainLoop
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg)
+				handler.HandleIncomingMessage(msg, func(textMessage internal.TextMessage) {
+					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
+				})
 			}
 		case newPeer := <-peerChan:
 			{

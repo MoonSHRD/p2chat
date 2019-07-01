@@ -9,7 +9,7 @@ import (
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
-	peer "github.com/libp2p/go-libp2p-peer"
+	peer "github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
@@ -21,6 +21,11 @@ type Handler struct {
 	pbMutex       sync.Mutex
 }
 
+type TextMessage struct {
+	Body string
+	From peer.ID
+}
+
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Set) Handler {
 	return Handler{
 		pb:            pb,
@@ -29,7 +34,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Se
 	}
 }
 
-func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
+func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage func(TextMessage)) {
 	//	var pbMutex sync.Mutex
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
@@ -46,7 +51,12 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message) {
 	case api.FLAG_GENERIC_MESSAGE:
 		// Green console colour: 	\x1b[32m
 		// Reset console colour: 	\x1b[0m
-		fmt.Printf("%s \x1b[32m%s\x1b[0m> ", addr, message.Body)
+		textMessage := TextMessage{
+			Body: message.Body,
+			From: addr,
+		}
+
+		handleTextMessage(textMessage)
 
 	// Getting topic request, answer topic response
 	case api.FLAG_TOPICS_REQUEST:
