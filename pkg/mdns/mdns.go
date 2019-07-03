@@ -1,4 +1,4 @@
-package pkg
+package mdns
 
 import (
 	"context"
@@ -21,11 +21,11 @@ func (n *discoveryNotifee) HandlePeerFound(pi peer.AddrInfo) {
 }
 
 //Initialize the MDNS service
-func InitMDNS(ctx context.Context, thishost host.Host, rendezvous string) chan peer.AddrInfo {
+func InitMDNS(ctx context.Context, thishost host.Host, rendezvous string) (<-chan peer.AddrInfo, error) {
 	// An hour might be a long long period in practical applications. But this is fine for us
 	ser, err := discovery.NewMdnsService(ctx, thishost, time.Hour, rendezvous)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	//register with service so that we get notified about peer discovery
@@ -34,5 +34,5 @@ func InitMDNS(ctx context.Context, thishost host.Host, rendezvous string) chan p
 
 	ser.RegisterNotifee(n)
 
-	return n.PeerChan
+	return n.PeerChan, nil
 }
