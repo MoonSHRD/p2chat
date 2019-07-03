@@ -1,4 +1,4 @@
-package internal
+package pkg
 
 import (
 	"context"
@@ -18,7 +18,7 @@ type Handler struct {
 	pb            *pubsub.PubSub
 	serviceTopic  string
 	networkTopics mapset.Set
-	pbMutex       sync.Mutex
+	PbMutex       sync.Mutex
 }
 
 // TextMessage is more end-user model of regular text messages
@@ -74,9 +74,9 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 		}
 		go func() {
 			// Lock for blocking "same-time-respond"
-			h.pbMutex.Lock()
+			h.PbMutex.Lock()
 			h.pb.Publish(h.serviceTopic, sendData)
-			h.pbMutex.Unlock()
+			h.PbMutex.Unlock()
 		}()
 	// Getting topic respond, adding topics to `networkTopics`
 	case api.FLAG_TOPICS_RESPONSE:
@@ -118,8 +118,8 @@ func (h *Handler) RequestNetworkTopics(ctx context.Context) {
 			return
 		default:
 		}
-		h.pbMutex.Lock()
+		h.PbMutex.Lock()
 		h.pb.Publish(h.serviceTopic, sendData)
-		h.pbMutex.Unlock()
+		h.PbMutex.Unlock()
 	}
 }
