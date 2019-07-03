@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"github.com/MoonSHRD/p2chat/api"
@@ -47,7 +48,7 @@ func (h *Handler) ReadStdin(ctx context.Context) {
 				return
 			}
 
-			fmt.Println("Error reading from stdin")
+			log.Printf("Error reading from stdin: %s", err)
 			return
 		}
 		if text == "\n" {
@@ -60,7 +61,7 @@ func (h *Handler) ReadStdin(ctx context.Context) {
 
 		err = h.node.Publish(h.topic, message)
 		if err != nil {
-			fmt.Println("Error occurred when publishing")
+			log.Printf("Error occurred when publishing: %s, err")
 		}
 	}
 }

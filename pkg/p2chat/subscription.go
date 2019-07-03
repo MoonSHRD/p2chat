@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/MoonSHRD/p2chat/api"
 	"github.com/MoonSHRD/p2chat/pkg/mdns"
@@ -41,8 +42,8 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 			}
 			msg, err := subscription.Next(ctx)
 			if err != nil {
-				fmt.Println("Error reading from buffer")
-				return
+				log.Printf("Error reading from buffer: %s", err)
+				continue
 			}
 
 			if len(msg.Data) == 0 {
@@ -50,8 +51,8 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 			}
 			addr, err := peer.IDFromBytes(msg.From)
 			if err != nil {
-				fmt.Println("Error occurred when reading message From field...")
-				panic(err)
+				log.Printf("Error occurred when reading message From field: %s", err)
+				continue
 			}
 
 			// This checks if sender address of incoming message is ours. It is need because we get our messages when subscribed to the same topic.
@@ -64,7 +65,7 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 
 	peerChan, err := mdns.InitMDNS(ctx, node.host, topic)
 	if err != nil {
-		fmt.Println("Failed to init MDNS:", err)
+		log.Printf("Failed to init MDNS: %s", err)
 		return err
 	}
 
@@ -74,13 +75,13 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 			return nil
 		case newPeer := <-peerChan:
 			{
-				fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
+				log.Printf("Found peer: %s, add address to peerstore", newPeer)
 
 				// Adding peer addresses to local peerstore
 				node.host.Peerstore().AddAddrs(newPeer.ID, newPeer.Addrs, peerstore.PermanentAddrTTL)
 				// Connect to the peer
 				if err := node.host.Connect(ctx, newPeer); err != nil {
-					fmt.Println("Connection failed:", err)
+					log.Printf("Connection failed: %s", err)
 				}
 				handler.Peer(PeerAddr(newPeer))
 			}
@@ -88,7 +89,7 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 			{
 				err := s.processMessage(msg)
 				if err != nil {
-					fmt.Println("\nFailed to process message:", err)
+					log.Printf("Failed to process message: %s", err)
 				}
 			}
 		}
@@ -100,7 +101,7 @@ func newSubscription(ctx context.Context, node *Node, topic string, handler Hand
 func (s *subscription) processMessage(msg pubsub.Message) error {
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
-		fmt.Println("Error occurred when reading message From field...")
+		log.Printf("Error occurred when reading message From field: %s", err)
 		return err
 	}
 	message := api.BaseMessage{}
@@ -135,7 +136,7 @@ func (s *subscription) processMessage(msg pubsub.Message) error {
 		}
 		go func() {
 			if err := s.node.pubsub.Publish(s.topic, sendData); err != nil {
-				fmt.Println("\nFailed to publish:", err)
+				log.Printf("Failed to publish: %s", err)
 			}
 		}()
 

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/MoonSHRD/p2chat/internal/cli"
@@ -24,6 +25,8 @@ import (
 */
 
 func main() {
+	log.SetFlags(log.Ldate + log.Ltime + log.Lshortfile)
+
 	help := flag.Bool("help", false, "Display Help")
 	cfg := parseFlags()
 
@@ -34,7 +37,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
+	log.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
@@ -60,14 +63,14 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, chatNode.HostID())
+	log.Printf("[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, chatNode.HostID())
 
 	cliHandler := cli.NewHandler(chatNode, cfg.RendezvousString)
 
 	go func() {
 		err := chatNode.Subscribe(ctx, cfg.RendezvousString, cliHandler)
 		if err != nil {
-			fmt.Println("\nFailed to subscribe:", err)
+			log.Println("\nFailed to subscribe:", err)
 		}
 		ctxCancel()
 	}()
@@ -76,7 +79,7 @@ func main() {
 	ctxCancel()
 
 	if err := chatNode.Close(); err != nil {
-		fmt.Println("\nClosing host failed:", err)
+		log.Println("Closing host failed:", err)
 	}
-	fmt.Println("\nBye")
+	log.Println("Bye")
 }
