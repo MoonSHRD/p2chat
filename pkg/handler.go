@@ -85,8 +85,8 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 		if err != nil {
 			panic(err)
 		}
-		if respond != nil {
-			for i := 0; i < len(respond.Topics); i++ {
+		for i := 0; i < len(respond.Topics); i++ {
+			if respond.Topics[i] != nil {
 				h.networkTopics.Add(respond.Topics[i])
 			}
 		}
