@@ -83,10 +83,12 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 		respond := &api.GetTopicsRespondMessage{}
 		err = json.Unmarshal(msg.Data, respond)
 		if err != nil {
-			return
+			panic(err)
 		}
-		for i := 0; i < len(respond.Topics); i++ {
-			h.networkTopics.Add(respond.Topics[i])
+		if respond != nil {
+			for i := 0; i < len(respond.Topics); i++ {
+				h.networkTopics.Add(respond.Topics[i])
+			}
 		}
 	default:
 		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
