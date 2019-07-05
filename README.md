@@ -1,26 +1,16 @@
 # p2chat
 
-Examples of local chats on libp2p stack
+## What is this and how do I do rest of my life about it?
+p2hcat - is a core local messenger library, which based on Libp2p stack.
 
-Both examples work with automatic peer discovery
-I've separated mdns from rendezvous point, so you can try both of methods as you  wish
+p2chat basicly supports discovery through **mdns** service and support messaging via **PubSub**
 
-
-
-## What's the main difference and how it could be implemented as MoonShard solution
-
-Simply words, both methods use DHT for peerdiscovery
-
-mDNS using micro-dns service, which means that routing node in the network should support
-this service. Most of modern routers should support it, but not everyone
-(i.g. mDNS will definetly not working at Moscow subways as we learned in fields testing)
-Also not sure mDNS will work from mobile ad-hoc points, but have not tested it this far
-
-Rendezvous point is better solution, and also should decrease battery consumption
-Also it should better connect local chats with cloud (remote) nodes.
-Rendezvous also great when thereare a lot of offline nodes behind NAT and it hard to connect with them
-
-Probably will switch to SONM solution, but as far we are fully accomplish with libp2p stack
+It supports next features:
+- devices autodiscovery by `Rendez-vous string`
+- topic list exchanging between peers
+- autoconnect group chats by `PubSub`
+- default signing and validating messages (crypto)
+- crossplatform
 
 
 ## How to build
@@ -33,25 +23,6 @@ export GO111MODULE=on
 I've include it into Makefile, but not sure it will work correctly
 
 
-### How to build rendezvous
-From main repo run
-```
-> make deps
-> cd ./rendezvous
-> go build -o chat
-
-```
-### How to build rendezvous to windows devices
-GOOS=windows GOARCH=amd64 go build -o chat_windows
-
-### How to use rendezvous
-Use two different terminal windows to run
-```
-./chat -listen /ip4/127.0.0.1/tcp/6666
-./chat -listen /ip4/127.0.0.1/tcp/6668
-
-```
-Remember about NAT penetration!
 
 ### How to build mDNS
 ```
@@ -146,6 +117,8 @@ Finally we open stream to the peers we found, as we find them
 ```
 
 ### How to build Android module
+
+**WARNING** - android module was transfered into https://github.com/MoonSHRD/p2chat-android
 
 ```
 cd ./mDNS/android/
