@@ -86,7 +86,7 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 			panic(err)
 		}
 		for i := 0; i < len(respond.Topics); i++ {
-			h.networkTopics.Add(respond.Topics[i]) // TODO Fix NPE
+			h.networkTopics.Add(respond.Topics[i])
 		}
 	default:
 		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
