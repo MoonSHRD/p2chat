@@ -99,6 +99,12 @@ func (h *Handler) getTopics() []string {
 	return topics
 }
 
+// Get list of peers subscribed on specific topic
+func (h *Handler) getPeers(topic string) []peer.ID {
+	peers := h.pb.ListPeers(topic)
+	return peers
+}
+
 // Blacklists a peer by its id
 func (h *Handler) blacklistPeer(pid peer.ID) {
 	h.pb.BlacklistPeer(pid)
