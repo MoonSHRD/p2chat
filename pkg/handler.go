@@ -50,8 +50,6 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 	switch message.Flag {
 	// Getting regular message
 	case api.FLAG_GENERIC_MESSAGE:
-		// Green console colour: 	\x1b[32m
-		// Reset console colour: 	\x1b[0m
 		textMessage := TextMessage{
 			Body: message.Body,
 			From: addr,
