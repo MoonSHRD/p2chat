@@ -66,7 +66,7 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 				Body: "",
 				Flag: api.FLAG_TOPICS_RESPONSE,
 			},
-			Topics: h.getTopics(),
+			Topics: h.GetTopics(),
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
@@ -94,19 +94,19 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 }
 
 // Get list of topics **this** node is subscribed to
-func (h *Handler) getTopics() []string {
+func (h *Handler) GetTopics() []string {
 	topics := h.pb.GetTopics()
 	return topics
 }
 
 // Get list of peers subscribed on specific topic
-func (h *Handler) getPeers(topic string) []peer.ID {
+func (h *Handler) GetPeers(topic string) []peer.ID {
 	peers := h.pb.ListPeers(topic)
 	return peers
 }
 
 // Blacklists a peer by its id
-func (h *Handler) blacklistPeer(pid peer.ID) {
+func (h *Handler) BlacklistPeer(pid peer.ID) {
 	h.pb.BlacklistPeer(pid)
 }
 
