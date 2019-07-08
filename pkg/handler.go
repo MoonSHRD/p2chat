@@ -99,6 +99,11 @@ func (h *Handler) getTopics() []string {
 	return topics
 }
 
+// Blacklists a peer by its id
+func (h *Handler) blacklistPeer(pid peer.ID) {
+	h.pb.BlacklistPeer(pid)
+}
+
 // Requesting topics from **other** peers
 func (h *Handler) RequestNetworkTopics(ctx context.Context) {
 
