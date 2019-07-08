@@ -9,7 +9,7 @@ import (
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
-	peer "github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
@@ -50,8 +50,6 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 	switch message.Flag {
 	// Getting regular message
 	case api.FLAG_GENERIC_MESSAGE:
-		// Green console colour: 	\x1b[32m
-		// Reset console colour: 	\x1b[0m
 		textMessage := TextMessage{
 			Body: message.Body,
 			From: addr,
@@ -66,7 +64,7 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 				Body: "",
 				Flag: api.FLAG_TOPICS_RESPONSE,
 			},
-			Topics: h.getTopics(),
+			Topics: h.GetTopics(),
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
@@ -94,9 +92,20 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 }
 
 // Get list of topics **this** node is subscribed to
-func (h *Handler) getTopics() []string {
+func (h *Handler) GetTopics() []string {
 	topics := h.pb.GetTopics()
 	return topics
+}
+
+// Get list of peers subscribed on specific topic
+func (h *Handler) GetPeers(topic string) []peer.ID {
+	peers := h.pb.ListPeers(topic)
+	return peers
+}
+
+// Blacklists a peer by its id
+func (h *Handler) BlacklistPeer(pid peer.ID) {
+	h.pb.BlacklistPeer(pid)
 }
 
 // Requesting topics from **other** peers

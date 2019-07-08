@@ -14,8 +14,8 @@ import (
 
 	"time"
 
-	api "github.com/MoonSHRD/p2chat/api"
-	pkg "github.com/MoonSHRD/p2chat/pkg"
+	"github.com/MoonSHRD/p2chat/api"
+	"github.com/MoonSHRD/p2chat/pkg"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -238,7 +238,10 @@ MainLoop:
 		case msg := <-incomingMessages:
 			{
 				handler.HandleIncomingMessage(msg, func(textMessage pkg.TextMessage) {
-					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
+					// Green console colour: 	\x1b[32m
+					// Reset console colour: 	\x1b[0m
+					fmt.Printf("%s > \x1b[32m%s\x1b[0m", textMessage.From, textMessage.Body)
+					fmt.Print("> ")
 				})
 			}
 		case newPeer := <-peerChan:
@@ -251,7 +254,8 @@ MainLoop:
 				if err := host.Connect(ctx, newPeer); err != nil {
 					fmt.Println("Connection failed:", err)
 				}
-				fmt.Println("\nConnected to:", newPeer)
+				fmt.Println("Connected to:", newPeer)
+				fmt.Println("> ")
 			}
 		}
 	}
