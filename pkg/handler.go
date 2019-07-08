@@ -9,7 +9,7 @@ import (
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
-	peer "github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
