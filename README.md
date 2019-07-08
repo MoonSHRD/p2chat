@@ -1,12 +1,10 @@
-# p2chat
+# P2Chat
+P2Chat - is a core local messenger library, which based on Libp2p stack.
 
-## What is this and how do I do rest of my life about it?
-p2hcat - is a core local messenger library, which based on Libp2p stack.
-
-p2chat basicly supports discovery through **mdns** service and support messaging via **PubSub**
+P2Chat basicaly supports discovery through **mDNS** service and support messaging via **PubSub**
 
 It supports next features:
-- devices autodiscovery by `Rendez-vous string`
+- devices autodiscovery by `Rendezvous string`
 - topic list exchanging between peers
 - autoconnect group chats by `PubSub`
 - default signing and validating messages (crypto) *[validation is temporary off, due to the incorrect signing messages on Android]*
@@ -23,4 +21,4 @@ $ go mod tidy
 $ go get -v -d ./... # not sure that it's neccessary
 $ make
 ```
-Builded binary will be in ./cmd/
+Builded binary will be in `./cmd/`
