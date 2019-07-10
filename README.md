@@ -18,7 +18,14 @@ Require go version >=1.12 , so make sure your `go version` is okay
 $ git clone https://github.com/MoonSHRD/p2chat
 $ cd p2chat
 $ go mod tidy
-$ go get -v -d ./... # not sure that it's neccessary
 $ make
 ```
+<<<<<<< HEAD
+=======
+
+If you have trouble with go mod, then you can try clean source building
+```
+$ go get -v -d ./... # not sure that it's neccessary
+```
+>>>>>>> master
 Builded binary will be in `./cmd/`
