@@ -20,12 +20,9 @@ $ cd p2chat
 $ go mod tidy
 $ make
 ```
-<<<<<<< HEAD
-=======
 
 If you have trouble with go mod, then you can try clean source building
 ```
 $ go get -v -d ./... # not sure that it's neccessary
 ```
->>>>>>> master
 Builded binary will be in `./cmd/`
