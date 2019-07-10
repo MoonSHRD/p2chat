@@ -23,8 +23,9 @@ type Handler struct {
 
 // TextMessage is more end-user model of regular text messages
 type TextMessage struct {
-	Body string
-	From peer.ID
+	Topic string
+	Body  string
+	From  peer.ID
 }
 
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Set) Handler {
@@ -35,8 +36,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Se
 	}
 }
 
-func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage func(TextMessage)) {
-	//	var pbMutex sync.Mutex
+func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handleTextMessage func(TextMessage)) {
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
 		fmt.Println("Error occurred when reading message From field...")
@@ -51,8 +51,9 @@ func (h *Handler) HandleIncomingMessage(msg pubsub.Message, handleTextMessage fu
 	// Getting regular message
 	case api.FLAG_GENERIC_MESSAGE:
 		textMessage := TextMessage{
-			Body: message.Body,
-			From: addr,
+			Topic: topic,
+			Body:  message.Body,
+			From:  addr,
 		}
 
 		handleTextMessage(textMessage)

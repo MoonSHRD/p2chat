@@ -237,7 +237,7 @@ MainLoop:
 			break MainLoop
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg, func(textMessage pkg.TextMessage) {
+				handler.HandleIncomingMessage(serviceTopic, msg, func(textMessage pkg.TextMessage) {
 					// Green console colour: 	\x1b[32m
 					// Reset console colour: 	\x1b[0m
 					fmt.Printf("%s > \x1b[32m%s\x1b[0m", textMessage.From, textMessage.Body)

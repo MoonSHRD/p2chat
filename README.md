@@ -7,7 +7,7 @@ It supports next features:
 - devices autodiscovery by `Rendezvous string`
 - topic list exchanging between peers
 - autoconnect group chats by `PubSub`
-- default signing and validating messages (crypto) *[validation is temporary off, due to the incorrect signing messages on Android]*
+- default signing and validating messages (crypto)
 - crossplatform
 
 
