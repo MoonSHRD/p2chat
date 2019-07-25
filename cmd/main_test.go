@@ -32,7 +32,6 @@ var (
 
 // Creates mock host object
 func createHost() (context.Context, host.Host, error) {
-
 	ctx, _ /* cancel */ := context.WithCancel(context.Background())
 	// defer cancel()
 
@@ -59,7 +58,6 @@ func createHost() (context.Context, host.Host, error) {
 }
 
 func TestCreateHosts(t *testing.T) {
-
 	for i := 0; i < numberOfNodes; i++ {
 		tempCtx, tempHost, err := createHost()
 		if err != nil {
@@ -72,7 +70,6 @@ func TestCreateHosts(t *testing.T) {
 }
 
 func TestMDNS(t *testing.T) {
-
 	for i := 0; i < numberOfNodes; i++ {
 		pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), testHosts[i], []protocol.ID{protocol.ID("/moonshard/1.0.0")}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
 		if err != nil {
@@ -107,10 +104,17 @@ func TestMDNS(t *testing.T) {
 
 // Checks whether all nodes are connected to each other
 func TestGetPeers(t *testing.T) {
-
 	for i := range testHandlers {
 		if len(testHandlers[i].GetPeers(serviceTag)) != numberOfNodes-1 {
 			t.Fatal("Not all nodes are connected to each other.")
+		}
+	}
+}
+
+func TestCloseHosts(t *testing.T) {
+	for _, host := range testHosts {
+		if err := host.Close(); err != nil {
+			t.Fatal(fmt.Sprintf("Failed when closing host %v", host.ID()))
 		}
 	}
 }
