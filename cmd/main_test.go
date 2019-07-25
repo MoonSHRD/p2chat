@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/MoonSHRD/p2chat/api"
 	"github.com/MoonSHRD/p2chat/pkg"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -24,10 +26,12 @@ const (
 )
 
 var (
-	testHosts    []host.Host
-	testContexts []context.Context
-	testHandlers []pkg.Handler
-	peerChan     chan peer.AddrInfo
+	testHosts         []host.Host
+	testContexts      []context.Context
+	testHandlers      []pkg.Handler
+	testPubsubs       []*pubsub.PubSub
+	testSubscriptions []*pubsub.Subscription
+	peerChan          chan peer.AddrInfo
 )
 
 // Creates mock host object
@@ -76,14 +80,16 @@ func TestMDNS(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		testPubsubs = append(testPubsubs, pb)
 		testHandlers = append(testHandlers, pkg.NewHandler(pb, serviceTag, &networkTopics))
 
 		peerChan = pkg.InitMDNS(testContexts[i], testHosts[i], serviceTag)
 
-		_, err = pb.Subscribe(serviceTag)
+		subscription, err := pb.Subscribe(serviceTag)
 		if err != nil {
 			t.Fatal(err)
 		}
+		testSubscriptions = append(testSubscriptions, subscription)
 
 		fmt.Println("Waiting for correct set up of PubSub...")
 		time.Sleep(3 * time.Second)
@@ -107,6 +113,42 @@ func TestGetPeers(t *testing.T) {
 	for i := range testHandlers {
 		if len(testHandlers[i].GetPeers(serviceTag)) != numberOfNodes-1 {
 			t.Fatal("Not all nodes are connected to each other.")
+		}
+	}
+}
+
+// Sends message to service topic
+func TestSendMessage(t *testing.T) {
+	message := &api.BaseMessage{
+		Body: fmt.Sprintf("%s send 'hello test'", testHosts[0].ID()),
+		Flag: api.FLAG_GENERIC_MESSAGE,
+	}
+
+	sendData, err := json.Marshal(message)
+	if err != nil {
+		t.Fatal("Error occurred when marshalling message object")
+	}
+
+	err = testPubsubs[0].Publish(serviceTag, sendData)
+	if err != nil {
+		t.Fatal("Error occurred when publishing")
+	}
+}
+
+// Grabs message from service topic
+func TestGetMessage(t *testing.T) {
+	for _, sub := range testSubscriptions[1:] {
+		message, err := sub.Next(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		decodedMessage := &api.BaseMessage{}
+		json.Unmarshal(message.Data, decodedMessage)
+
+		originalMessage := fmt.Sprintf("%s send 'hello test'", testHosts[0].ID())
+		if decodedMessage.Body != originalMessage {
+			t.Fatal("Message not does not match")
 		}
 	}
 }
