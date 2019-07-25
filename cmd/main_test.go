@@ -110,8 +110,8 @@ func TestMDNS(t *testing.T) {
 
 // Checks whether all nodes are connected to each other
 func TestGetPeers(t *testing.T) {
-	for i := range testHandlers {
-		if len(testHandlers[i].GetPeers(serviceTag)) != numberOfNodes-1 {
+	for _, handler := range testHandlers {
+		if len(handler.GetPeers(serviceTag)) != numberOfNodes-1 {
 			t.Fatal("Not all nodes are connected to each other.")
 		}
 	}
