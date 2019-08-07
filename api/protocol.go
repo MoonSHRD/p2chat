@@ -7,9 +7,9 @@ Flags:
 		- 0x2: Response to the request for topics (ack)
 */
 const (
-	FLAG_GENERIC_MESSAGE int = 0x0
-	FLAG_TOPICS_REQUEST  int = 0x1
-	FLAG_TOPICS_RESPONSE int = 0x2
+	FlagGenericMessage int = 0x0
+	FlagTopicsRequest  int = 0x1
+	FlagTopicsResponse int = 0x2
 )
 
 // BaseMessage is the basic message format of our protocol

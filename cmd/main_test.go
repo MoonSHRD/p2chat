@@ -121,7 +121,7 @@ func TestGetPeers(t *testing.T) {
 func TestSendMessage(t *testing.T) {
 	message := &api.BaseMessage{
 		Body: fmt.Sprintf("%s send 'hello test'", testHosts[0].ID()),
-		Flag: api.FLAG_GENERIC_MESSAGE,
+		Flag: api.FlagGenericMessage,
 	}
 
 	sendData, err := json.Marshal(message)

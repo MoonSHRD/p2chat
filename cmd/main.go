@@ -135,7 +135,7 @@ func writeTopic(topic string) {
 		}
 		message := &api.BaseMessage{
 			Body: text,
-			Flag: api.FLAG_GENERIC_MESSAGE,
+			Flag: api.FlagGenericMessage,
 		}
 
 		sendData, err := json.Marshal(message)

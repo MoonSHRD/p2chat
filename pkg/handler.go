@@ -49,7 +49,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	}
 	switch message.Flag {
 	// Getting regular message
-	case api.FLAG_GENERIC_MESSAGE:
+	case api.FlagGenericMessage:
 		textMessage := TextMessage{
 			Topic: topic,
 			Body:  message.Body,
@@ -59,11 +59,11 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		handleTextMessage(textMessage)
 
 	// Getting topic request, answer topic response
-	case api.FLAG_TOPICS_REQUEST:
+	case api.FlagTopicsRequest:
 		respond := &api.GetTopicsRespondMessage{
 			BaseMessage: api.BaseMessage{
 				Body: "",
-				Flag: api.FLAG_TOPICS_RESPONSE,
+				Flag: api.FlagTopicsResponse,
 			},
 			Topics: h.GetTopics(),
 		}
@@ -78,7 +78,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 			h.PbMutex.Unlock()
 		}()
 	// Getting topic respond, adding topics to `networkTopics`
-	case api.FLAG_TOPICS_RESPONSE:
+	case api.FlagTopicsResponse:
 		respond := &api.GetTopicsRespondMessage{}
 		err = json.Unmarshal(msg.Data, respond)
 		if err != nil {
@@ -114,7 +114,7 @@ func (h *Handler) RequestNetworkTopics(ctx context.Context) {
 
 	requestTopicsMessage := &api.BaseMessage{
 		Body: "",
-		Flag: api.FLAG_TOPICS_REQUEST,
+		Flag: api.FlagTopicsRequest,
 	}
 	sendData, err := json.Marshal(requestTopicsMessage)
 	if err != nil {
