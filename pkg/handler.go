@@ -111,23 +111,31 @@ func (h *Handler) BlacklistPeer(pid peer.ID) {
 
 // Requesting topics from **other** peers
 func (h *Handler) RequestNetworkTopics(ctx context.Context) {
-
 	requestTopicsMessage := &api.BaseMessage{
 		Body: "",
 		Flag: api.FlagTopicsRequest,
 	}
-	sendData, err := json.Marshal(requestTopicsMessage)
+
+	h.sendMessageToServiceTopic(requestTopicsMessage, ctx)
+}
+
+// Sends marshaled message to the service topic
+func (h *Handler) sendMessageToServiceTopic(message *api.BaseMessage, ctx context.Context) {
+	sendData, err := json.Marshal(message)
 	if err != nil {
 		panic(err)
 	}
-	t := time.NewTicker(3 * time.Second)
-	defer t.Stop()
-	for range t.C {
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
+
 		h.PbMutex.Lock()
 		h.pb.Publish(h.serviceTopic, sendData)
 		h.PbMutex.Unlock()
