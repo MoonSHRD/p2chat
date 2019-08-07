@@ -119,6 +119,16 @@ func (h *Handler) RequestNetworkTopics(ctx context.Context) {
 	h.sendMessageToServiceTopic(requestTopicsMessage, ctx)
 }
 
+// Requests MatrixID from other peers
+func (h *Handler) RequestPeersIdentity(ctx context.Context) {
+	requestPeersIdentity := &api.BaseMessage{
+		Body: "",
+		Flag: api.FlagIdentityRequest,
+	}
+
+	h.sendMessageToServiceTopic(requestPeersIdentity, ctx)
+}
+
 // Sends marshaled message to the service topic
 func (h *Handler) sendMessageToServiceTopic(message *api.BaseMessage, ctx context.Context) {
 	sendData, err := json.Marshal(message)
