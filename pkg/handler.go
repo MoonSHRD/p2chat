@@ -18,6 +18,7 @@ type Handler struct {
 	pb            *pubsub.PubSub
 	serviceTopic  string
 	networkTopics mapset.Set
+	identityMap   map[string]string
 	PbMutex       sync.Mutex
 }
 
@@ -33,6 +34,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Se
 		pb:            pb,
 		serviceTopic:  serviceTopic,
 		networkTopics: *networkTopics,
+		identityMap:   make(map[string]string),
 	}
 }
 
@@ -87,6 +89,12 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		for i := 0; i < len(respond.Topics); i++ {
 			h.networkTopics.Add(respond.Topics[i])
 		}
+	case api.FlagIdentityResponse:
+		respond := &api.GetIdentityRespondMessage{}
+		if err := json.Unmarshal(msg.Data, respond); err != nil {
+			panic(err)
+		}
+		h.identityMap[respond.Multiaddress] = respond.MatrixID
 	default:
 		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
