@@ -28,3 +28,11 @@ type GetTopicsRespondMessage struct {
 	BaseMessage
 	Topics []string `json:"topics"`
 }
+
+// GetIdentityRespondMessage is the format of the message to answer of request for peer identity
+// Flag: 0x4
+type GetIdentityRespondMessage struct {
+	BaseMessage
+	Multiaddress string `json:"multiaddress"`
+	MatrixID     string `json:"matrix_id"`
+}
