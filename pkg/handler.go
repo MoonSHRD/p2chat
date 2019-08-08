@@ -45,8 +45,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		panic(err)
 	}
 	message := &api.BaseMessage{}
-	err = json.Unmarshal(msg.Data, message)
-	if err != nil {
+	if err = json.Unmarshal(msg.Data, message); err != nil {
 		return
 	}
 	switch message.Flag {
@@ -82,8 +81,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	// Getting topic respond, adding topics to `networkTopics`
 	case api.FlagTopicsResponse:
 		respond := &api.GetTopicsRespondMessage{}
-		err = json.Unmarshal(msg.Data, respond)
-		if err != nil {
+		if err = json.Unmarshal(msg.Data, respond); err != nil {
 			panic(err)
 		}
 		for i := 0; i < len(respond.Topics); i++ {
