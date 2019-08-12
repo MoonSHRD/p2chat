@@ -19,6 +19,7 @@ type Handler struct {
 	serviceTopic  string
 	networkTopics mapset.Set
 	identityMap   map[string]string
+	multiaddress  string
 	PbMutex       sync.Mutex
 }
 
@@ -29,12 +30,13 @@ type TextMessage struct {
 	From  peer.ID
 }
 
-func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Set) Handler {
+func NewHandler(pb *pubsub.PubSub, serviceTopic, multiaddress string, networkTopics *mapset.Set) Handler {
 	return Handler{
 		pb:            pb,
 		serviceTopic:  serviceTopic,
 		networkTopics: *networkTopics,
 		identityMap:   make(map[string]string),
+		multiaddress:  multiaddress,
 	}
 }
 
@@ -58,7 +60,6 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		}
 
 		handleTextMessage(textMessage)
-
 	// Getting topic request, answer topic response
 	case api.FlagTopicsRequest:
 		respond := &api.GetTopicsRespondMessage{
@@ -87,6 +88,25 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		for i := 0; i < len(respond.Topics); i++ {
 			h.networkTopics.Add(respond.Topics[i])
 		}
+	// Getting identity request, answer identity response
+	case api.FlagIdentityRequest:
+		respond := &api.GetIdentityRespondMessage{
+			BaseMessage: api.BaseMessage{
+				Body: "",
+				Flag: api.FlagIdentityResponse,
+			},
+			Multiaddress: h.multiaddress,
+			MatrixID:     "",
+		}
+		sendData, err := json.Marshal(respond)
+		if err != nil {
+			return
+		}
+		go func() {
+			h.PbMutex.Lock()
+			h.pb.Publish(h.serviceTopic, sendData)
+			h.PbMutex.Unlock()
+		}()
 	// Getting identity respond, mapping Multiaddress/MatrixID
 	case api.FlagIdentityResponse:
 		respond := &api.GetIdentityRespondMessage{}
