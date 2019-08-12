@@ -87,6 +87,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		for i := 0; i < len(respond.Topics); i++ {
 			h.networkTopics.Add(respond.Topics[i])
 		}
+	// Getting identity respond, mapping Multiaddress/MatrixID
 	case api.FlagIdentityResponse:
 		respond := &api.GetIdentityRespondMessage{}
 		if err := json.Unmarshal(msg.Data, respond); err != nil {
