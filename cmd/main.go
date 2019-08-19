@@ -103,7 +103,7 @@ func newTopic(topic string) {
 			return
 		case msg := <-incomingMessages:
 			{
-				handler.HandleIncomingMessage(msg, func(textMessage pkg.TextMessage) {
+				handler.HandleIncomingMessage(serviceTopic, msg, func(textMessage pkg.TextMessage) {
 					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
 				})
 			}
@@ -135,7 +135,7 @@ func writeTopic(topic string) {
 		}
 		message := &api.BaseMessage{
 			Body: text,
-			Flag: api.FLAG_GENERIC_MESSAGE,
+			Flag: api.FlagGenericMessage,
 		}
 
 		sendData, err := json.Marshal(message)
@@ -204,7 +204,7 @@ func main() {
 	// Set global PubSub object
 	pubSub = pb
 
-	handler = pkg.NewHandler(pb, serviceTopic, &networkTopics)
+	handler = pkg.NewHandler(pb, serviceTopic, sourceMultiAddr.String(), &networkTopics)
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)

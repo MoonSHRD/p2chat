@@ -18,6 +18,8 @@ type Handler struct {
 	pb            *pubsub.PubSub
 	serviceTopic  string
 	networkTopics mapset.Set
+	identityMap   map[string]string
+	multiaddress  string
 	PbMutex       sync.Mutex
 }
 
@@ -28,11 +30,13 @@ type TextMessage struct {
 	From  peer.ID
 }
 
-func NewHandler(pb *pubsub.PubSub, serviceTopic string, networkTopics *mapset.Set) Handler {
+func NewHandler(pb *pubsub.PubSub, serviceTopic, multiaddress string, networkTopics *mapset.Set) Handler {
 	return Handler{
 		pb:            pb,
 		serviceTopic:  serviceTopic,
 		networkTopics: *networkTopics,
+		identityMap:   make(map[string]string),
+		multiaddress:  multiaddress,
 	}
 }
 
@@ -43,13 +47,12 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		panic(err)
 	}
 	message := &api.BaseMessage{}
-	err = json.Unmarshal(msg.Data, message)
-	if err != nil {
+	if err = json.Unmarshal(msg.Data, message); err != nil {
 		return
 	}
 	switch message.Flag {
 	// Getting regular message
-	case api.FLAG_GENERIC_MESSAGE:
+	case api.FlagGenericMessage:
 		textMessage := TextMessage{
 			Topic: topic,
 			Body:  message.Body,
@@ -57,13 +60,12 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		}
 
 		handleTextMessage(textMessage)
-
 	// Getting topic request, answer topic response
-	case api.FLAG_TOPICS_REQUEST:
+	case api.FlagTopicsRequest:
 		respond := &api.GetTopicsRespondMessage{
 			BaseMessage: api.BaseMessage{
 				Body: "",
-				Flag: api.FLAG_TOPICS_RESPONSE,
+				Flag: api.FlagTopicsResponse,
 			},
 			Topics: h.GetTopics(),
 		}
@@ -78,15 +80,40 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 			h.PbMutex.Unlock()
 		}()
 	// Getting topic respond, adding topics to `networkTopics`
-	case api.FLAG_TOPICS_RESPONSE:
+	case api.FlagTopicsResponse:
 		respond := &api.GetTopicsRespondMessage{}
-		err = json.Unmarshal(msg.Data, respond)
-		if err != nil {
+		if err = json.Unmarshal(msg.Data, respond); err != nil {
 			panic(err)
 		}
 		for i := 0; i < len(respond.Topics); i++ {
 			h.networkTopics.Add(respond.Topics[i])
 		}
+	// Getting identity request, answer identity response
+	case api.FlagIdentityRequest:
+		respond := &api.GetIdentityRespondMessage{
+			BaseMessage: api.BaseMessage{
+				Body: "",
+				Flag: api.FlagIdentityResponse,
+			},
+			Multiaddress: h.multiaddress,
+			MatrixID:     "",
+		}
+		sendData, err := json.Marshal(respond)
+		if err != nil {
+			return
+		}
+		go func() {
+			h.PbMutex.Lock()
+			h.pb.Publish(h.serviceTopic, sendData)
+			h.PbMutex.Unlock()
+		}()
+	// Getting identity respond, mapping Multiaddress/MatrixID
+	case api.FlagIdentityResponse:
+		respond := &api.GetIdentityRespondMessage{}
+		if err := json.Unmarshal(msg.Data, respond); err != nil {
+			panic(err)
+		}
+		h.identityMap[respond.Multiaddress] = respond.MatrixID
 	default:
 		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
@@ -111,23 +138,41 @@ func (h *Handler) BlacklistPeer(pid peer.ID) {
 
 // Requesting topics from **other** peers
 func (h *Handler) RequestNetworkTopics(ctx context.Context) {
-
 	requestTopicsMessage := &api.BaseMessage{
 		Body: "",
-		Flag: api.FLAG_TOPICS_REQUEST,
+		Flag: api.FlagTopicsRequest,
 	}
-	sendData, err := json.Marshal(requestTopicsMessage)
+
+	h.sendMessageToServiceTopic(requestTopicsMessage, ctx)
+}
+
+// Requests MatrixID from other peers
+func (h *Handler) RequestPeersIdentity(ctx context.Context) {
+	requestPeersIdentity := &api.BaseMessage{
+		Body: "",
+		Flag: api.FlagIdentityRequest,
+	}
+
+	h.sendMessageToServiceTopic(requestPeersIdentity, ctx)
+}
+
+// Sends marshaled message to the service topic
+func (h *Handler) sendMessageToServiceTopic(message *api.BaseMessage, ctx context.Context) {
+	sendData, err := json.Marshal(message)
 	if err != nil {
 		panic(err)
 	}
-	t := time.NewTicker(3 * time.Second)
-	defer t.Stop()
-	for range t.C {
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
+
 		h.PbMutex.Lock()
 		h.pb.Publish(h.serviceTopic, sendData)
 		h.PbMutex.Unlock()

@@ -3,7 +3,7 @@ P2Chat - is a core local messenger library, which based on Libp2p stack.
 
 P2Chat basicaly supports discovery through **mDNS** service and support messaging via **PubSub**
 
-It supports next features:
+It supports following features:
 - devices autodiscovery by `Rendezvous string`
 - topic list exchanging between peers
 - autoconnect group chats by `PubSub`
@@ -12,7 +12,8 @@ It supports next features:
 
 
 ## Building
-Require go version >=1.12 , so make sure your `go version` is okay
+Require go version >=1.12 , so make sure your `go version` is okay.  
+**WARNING!** Building happen only when this project locates outside of GOPATH environment.
 
 ```bash
 $ git clone https://github.com/MoonSHRD/p2chat
