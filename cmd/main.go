@@ -191,7 +191,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
+	multiaddress := fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
+	fmt.Printf("\n[*] Your Multiaddress Is: %s\n", multiaddress)
 
 	myself = host
 
@@ -204,7 +205,7 @@ func main() {
 	// Set global PubSub object
 	pubSub = pb
 
-	handler = pkg.NewHandler(pb, serviceTopic, sourceMultiAddr.String(), &networkTopics)
+	handler = pkg.NewHandler(pb, serviceTopic, multiaddress, &networkTopics)
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
