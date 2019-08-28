@@ -30,17 +30,19 @@ import (
 
 // TODO: Update Readme & checkout and replace better comments
 
-var myself host.Host
-var pubSub *pubsub.PubSub
+var (
+	myself host.Host
+	pubSub *pubsub.PubSub
 
-var globalCtx context.Context
-var globalCtxCancel context.CancelFunc
+	globalCtx       context.Context
+	globalCtxCancel context.CancelFunc
 
-var pbMutex sync.Mutex
-var networkTopics = mapset.NewSet()
-var serviceTopic string
+	pbMutex       sync.Mutex
+	networkTopics = mapset.NewSet()
+	serviceTopic  string
 
-var handler pkg.Handler
+	handler pkg.Handler
+)
 
 // Read messages from subscription (topic)
 // NOTE: in this function we are providing subscription object, which means we should subscribe somewhere else before invoke this function
