@@ -28,14 +28,7 @@ import (
 	"github.com/multiformats/go-multiaddr"
 )
 
-/*
-
-	// TODO: Update Readme & checkout and replace better comments
-
-
-
-
-*/
+// TODO: Update Readme & checkout and replace better comments
 
 var myself host.Host
 var pubSub *pubsub.PubSub
@@ -62,8 +55,8 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 		}
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
-			log.Println("Error reading from buffer")
-			panic(err)
+			log.Println("Error reading from buffer", err)
+			return
 		}
 
 		if string(msg.Data) == "" {
@@ -72,8 +65,8 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 		if string(msg.Data) != "\n" {
 			addr, err := peer.IDFromBytes(msg.From)
 			if err != nil {
-				log.Println("Error occurred when reading message From field...")
-				panic(err)
+				log.Println("Error occurred when reading message From field...", err)
+				return
 			}
 
 			// This checks if sender address of incoming message is ours. It is need because we get our messages when subscribed to the same topic.
@@ -91,8 +84,8 @@ func newTopic(topic string) {
 	ctx := globalCtx
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
-		log.Println("Error occurred when subscribing to topic")
-		panic(err)
+		log.Println("Error occurred when subscribing to topic", err)
+		return
 	}
 	time.Sleep(3 * time.Second)
 	incomingMessages := make(chan pubsub.Message)
@@ -131,8 +124,8 @@ func writeTopic(topic string) {
 				break
 			}
 
-			log.Println("Error reading from stdin")
-			panic(err)
+			log.Println("Error reading from stdin", err)
+			return
 		}
 		message := &api.BaseMessage{
 			Body: text,
@@ -146,8 +139,8 @@ func writeTopic(topic string) {
 		}
 		err = pubSub.Publish(topic, sendData)
 		if err != nil {
-			log.Println("Error occurred when publishing")
-			panic(err)
+			log.Println("Error occurred when publishing", err)
+			return
 		}
 	}
 }
@@ -174,7 +167,7 @@ func main() {
 	// Creates a new RSA key pair for this wrapped_host.
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	// 0.0.0.0 will listen on any interface device.
@@ -189,7 +182,7 @@ func main() {
 	)
 
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	multiaddress := fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
@@ -200,7 +193,7 @@ func main() {
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
 	if err != nil {
 		log.Println("Error occurred when create PubSub")
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	// Set global PubSub object
@@ -212,16 +205,15 @@ func main() {
 	// Disvover all peers with our service (all ms devices)
 	peerChan, err := pkg.InitMDNS(ctx, host, cfg.RendezvousString)
 	if err != nil {
-		log.Println(err.Error())
-		return
+		panic(err)
 	}
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	serviceTopic = cfg.RendezvousString
 	if err != nil {
-		log.Println("Error occurred when subscribing to topic")
-		panic(err)
+		log.Println("Error occurred when subscribing to topic", err)
+		return
 	}
 
 	log.Println("Waiting for correct set up of PubSub...")
