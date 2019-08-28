@@ -210,7 +210,11 @@ func main() {
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)
-	peerChan := pkg.InitMDNS(ctx, host, cfg.RendezvousString)
+	peerChan, err := pkg.InitMDNS(ctx, host, cfg.RendezvousString)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	// NOTE:  here we use Randezvous string as 'topic' by default .. topic != service tag
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
