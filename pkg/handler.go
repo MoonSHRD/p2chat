@@ -3,7 +3,7 @@ package pkg
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -43,11 +43,12 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic, multiaddress string, networkTop
 func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handleTextMessage func(TextMessage)) {
 	addr, err := peer.IDFromBytes(msg.From)
 	if err != nil {
-		fmt.Println("Error occurred when reading message From field...")
-		panic(err)
+		log.Println("Error occurred when reading message from field...")
+		return
 	}
 	message := &api.BaseMessage{}
 	if err = json.Unmarshal(msg.Data, message); err != nil {
+		log.Println("Error occurred during unmarshalling the base message data")
 		return
 	}
 	switch message.Flag {
@@ -58,7 +59,6 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 			Body:  message.Body,
 			From:  addr,
 		}
-
 		handleTextMessage(textMessage)
 	// Getting topic request, answer topic response
 	case api.FlagTopicsRequest:
@@ -71,6 +71,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
+			log.Println("Error occurred during marshalling the respond from TopicsRequest")
 			return
 		}
 		go func() {
@@ -83,7 +84,8 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	case api.FlagTopicsResponse:
 		respond := &api.GetTopicsRespondMessage{}
 		if err = json.Unmarshal(msg.Data, respond); err != nil {
-			panic(err)
+			log.Println("Error occurred during unmarshalling the message data from TopicsResponse")
+			return
 		}
 		for i := 0; i < len(respond.Topics); i++ {
 			h.networkTopics.Add(respond.Topics[i])
@@ -100,6 +102,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
+			log.Println("Error occurred during marshalling the respond from IdentityRequest")
 			return
 		}
 		go func() {
@@ -111,11 +114,12 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	case api.FlagIdentityResponse:
 		respond := &api.GetIdentityRespondMessage{}
 		if err := json.Unmarshal(msg.Data, respond); err != nil {
-			panic(err)
+			log.Println("Error occurred during unmarshalling the message data from IdentityResponse")
+			return
 		}
 		h.identityMap[respond.Multiaddress] = respond.MatrixID
 	default:
-		fmt.Printf("\nUnknown message type: %#x\n", message.Flag)
+		log.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
 }
 
@@ -160,7 +164,8 @@ func (h *Handler) RequestPeersIdentity(ctx context.Context) {
 func (h *Handler) sendMessageToServiceTopic(ctx context.Context, message *api.BaseMessage) {
 	sendData, err := json.Marshal(message)
 	if err != nil {
-		panic(err)
+		log.Println(err.Error())
+		return
 	}
 
 	ticker := time.NewTicker(3 * time.Second)

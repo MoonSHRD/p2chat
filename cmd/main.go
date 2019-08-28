@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 
 	"io"
 	"os"
@@ -61,7 +62,7 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 		}
 		msg, err := subscription.Next(context.Background())
 		if err != nil {
-			fmt.Println("Error reading from buffer")
+			log.Println("Error reading from buffer")
 			panic(err)
 		}
 
@@ -71,7 +72,7 @@ func readSub(subscription *pubsub.Subscription, incomingMessagesChan chan pubsub
 		if string(msg.Data) != "\n" {
 			addr, err := peer.IDFromBytes(msg.From)
 			if err != nil {
-				fmt.Println("Error occurred when reading message From field...")
+				log.Println("Error occurred when reading message From field...")
 				panic(err)
 			}
 
@@ -90,7 +91,7 @@ func newTopic(topic string) {
 	ctx := globalCtx
 	subscription, err := pubSub.Subscribe(topic)
 	if err != nil {
-		fmt.Println("Error occurred when subscribing to topic")
+		log.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
 	time.Sleep(3 * time.Second)
@@ -104,7 +105,7 @@ func newTopic(topic string) {
 		case msg := <-incomingMessages:
 			{
 				handler.HandleIncomingMessage(serviceTopic, msg, func(textMessage pkg.TextMessage) {
-					fmt.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
+					log.Printf("%s \x1b[32m%s\x1b[0m> ", textMessage.From, textMessage.Body)
 				})
 			}
 		}
@@ -122,7 +123,7 @@ func writeTopic(topic string) {
 			return
 		default:
 		}
-		fmt.Print("> ")
+		log.Print("> ")
 		text, err := stdReader.ReadString('\n')
 		if err != nil {
 
@@ -130,7 +131,7 @@ func writeTopic(topic string) {
 				break
 			}
 
-			fmt.Println("Error reading from stdin")
+			log.Println("Error reading from stdin")
 			panic(err)
 		}
 		message := &api.BaseMessage{
@@ -140,12 +141,12 @@ func writeTopic(topic string) {
 
 		sendData, err := json.Marshal(message)
 		if err != nil {
-			fmt.Println("Error occurred when marshalling message object")
+			log.Println("Error occurred when marshalling message object")
 			continue
 		}
 		err = pubSub.Publish(topic, sendData)
 		if err != nil {
-			fmt.Println("Error occurred when publishing")
+			log.Println("Error occurred when publishing")
 			panic(err)
 		}
 	}
@@ -156,13 +157,13 @@ func main() {
 	cfg := parseFlags()
 
 	if *help {
-		fmt.Printf("Simple example for peer discovery using mDNS. mDNS is great when you have multiple peers in local LAN.")
-		fmt.Printf("Usage: \n   Run './chat-with-mdns'\nor Run './chat-with-mdns -wrapped_host [wrapped_host] -port [port] -rendezvous [string] -pid [proto ID]'\n")
+		log.Printf("Simple example for peer discovery using mDNS. mDNS is great when you have multiple peers in local LAN.")
+		log.Printf("Usage: \n   Run './chat-with-mdns'\nor Run './chat-with-mdns -wrapped_host [wrapped_host] -port [port] -rendezvous [string] -pid [proto ID]'\n")
 
 		os.Exit(0)
 	}
 
-	fmt.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
+	log.Printf("[*] Listening on: %s with port: %d\n", cfg.listenHost, cfg.listenPort)
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	globalCtx = ctx
@@ -192,13 +193,13 @@ func main() {
 	}
 
 	multiaddress := fmt.Sprintf("/ip4/%s/tcp/%v/p2p/%s", cfg.listenHost, cfg.listenPort, host.ID().Pretty())
-	fmt.Printf("\n[*] Your Multiaddress Is: %s\n", multiaddress)
+	log.Printf("\n[*] Your Multiaddress Is: %s\n", multiaddress)
 
 	myself = host
 
 	pb, err := pubsub.NewFloodsubWithProtocols(context.Background(), host, []protocol.ID{protocol.ID(cfg.ProtocolID)}, pubsub.WithMessageSigning(true), pubsub.WithStrictSignatureVerification(true))
 	if err != nil {
-		fmt.Println("Error occurred when create PubSub")
+		log.Println("Error occurred when create PubSub")
 		panic(err)
 	}
 
@@ -215,11 +216,11 @@ func main() {
 	subscription, err := pb.Subscribe(cfg.RendezvousString)
 	serviceTopic = cfg.RendezvousString
 	if err != nil {
-		fmt.Println("Error occurred when subscribing to topic")
+		log.Println("Error occurred when subscribing to topic")
 		panic(err)
 	}
 
-	fmt.Println("Waiting for correct set up of PubSub...")
+	log.Println("Waiting for correct set up of PubSub...")
 	time.Sleep(3 * time.Second)
 
 	incomingMessages := make(chan pubsub.Message)
@@ -241,30 +242,30 @@ MainLoop:
 				handler.HandleIncomingMessage(serviceTopic, msg, func(textMessage pkg.TextMessage) {
 					// Green console colour: 	\x1b[32m
 					// Reset console colour: 	\x1b[0m
-					fmt.Printf("%s > \x1b[32m%s\x1b[0m", textMessage.From, textMessage.Body)
-					fmt.Print("> ")
+					log.Printf("%s > \x1b[32m%s\x1b[0m", textMessage.From, textMessage.Body)
+					log.Print("> ")
 				})
 			}
 		case newPeer := <-peerChan:
 			{
-				fmt.Println("\nFound peer:", newPeer, ", add address to peerstore")
+				log.Println("\nFound peer:", newPeer, ", add address to peerstore")
 
 				// Adding peer addresses to local peerstore
 				host.Peerstore().AddAddr(newPeer.ID, newPeer.Addrs[0], peerstore.PermanentAddrTTL)
 				// Connect to the peer
 				if err := host.Connect(ctx, newPeer); err != nil {
-					fmt.Println("Connection failed:", err)
+					log.Println("Connection failed:", err)
 				}
-				fmt.Println("Connected to:", newPeer)
-				fmt.Println("> ")
+				log.Println("Connected to:", newPeer)
+				log.Println("> ")
 			}
 		}
 	}
 
 	if err := host.Close(); err != nil {
-		fmt.Println("\nClosing host failed:", err)
+		log.Println("\nClosing host failed:", err)
 	}
-	fmt.Println("\nBye")
+	log.Println("\nBye")
 }
 
 func getNetworkTopics() {
