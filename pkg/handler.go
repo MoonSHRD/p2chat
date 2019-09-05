@@ -99,7 +99,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 				Flag: api.FlagIdentityResponse,
 			},
 			Multiaddress: h.multiaddress,
-			MatrixID:     "",
+			MatrixID:     h.matrixID,
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
