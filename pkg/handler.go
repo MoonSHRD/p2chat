@@ -20,6 +20,7 @@ type Handler struct {
 	networkTopics mapset.Set
 	identityMap   map[string]string
 	multiaddress  string
+	matrixID      string
 	PbMutex       sync.Mutex
 }
 
@@ -121,6 +122,11 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	default:
 		log.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
+}
+
+// Set Matrix ID
+func (h *Handler) SetMatrixID(mxID string) {
+	h.matrixID = mxID
 }
 
 // Get list of topics **this** node is subscribed to
