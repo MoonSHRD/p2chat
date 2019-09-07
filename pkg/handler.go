@@ -129,6 +129,11 @@ func (h *Handler) SetMatrixID(mxID string) {
 	h.matrixID = mxID
 }
 
+// Returns copy of handler's identity map ([multiaddress]=>[matrixID])
+func (h *Handler) GetIdentityMap() map[string]string {
+	return h.identityMap
+}
+
 // Get list of topics **this** node is subscribed to
 func (h *Handler) GetTopics() []string {
 	topics := h.pb.GetTopics()
