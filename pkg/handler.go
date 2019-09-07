@@ -125,8 +125,8 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 }
 
 // Set Matrix ID
-func (h *Handler) SetMatrixID(mxID string) {
-	h.matrixID = mxID
+func (h *Handler) SetMatrixID(matrixID string) {
+	h.matrixID = matrixID
 }
 
 // Returns copy of handler's identity map ([multiaddress]=>[matrixID])
