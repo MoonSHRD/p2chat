@@ -201,7 +201,7 @@ func main() {
 	// Set global PubSub object
 	pubSub = pb
 
-	handler = pkg.NewHandler(pb, serviceTopic, multiaddress, &networkTopics)
+	handler = pkg.NewHandler(pb, serviceTopic, host.ID(), &networkTopics)
 
 	// Randezvous string = service tag
 	// Disvover all peers with our service (all ms devices)

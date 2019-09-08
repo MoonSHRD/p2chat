@@ -1,5 +1,7 @@
 package api
 
+import "github.com/libp2p/go-libp2p-core/peer"
+
 /*
 Flags:
 		- 0x0: Generic message
@@ -33,6 +35,6 @@ type GetTopicsRespondMessage struct {
 // Flag: 0x4
 type GetIdentityRespondMessage struct {
 	BaseMessage
-	Multiaddress string `json:"multiaddress"`
-	MatrixID     string `json:"matrix_id"`
+	PeerID   peer.ID `json:"peer_id"`
+	MatrixID string  `json:"matrix_id"`
 }
