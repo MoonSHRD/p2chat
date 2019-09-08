@@ -129,7 +129,7 @@ func (h *Handler) SetMatrixID(matrixID string) {
 	h.matrixID = matrixID
 }
 
-// Returns copy of handler's identity map ([multiaddress]=>[matrixID])
+// Returns copy of handler's identity map ([peer.ID]=>[matrixID])
 func (h *Handler) GetIdentityMap() map[peer.ID]string {
 	return h.identityMap
 }
