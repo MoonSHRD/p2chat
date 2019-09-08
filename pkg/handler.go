@@ -18,8 +18,8 @@ type Handler struct {
 	pb            *pubsub.PubSub
 	serviceTopic  string
 	networkTopics mapset.Set
-	identityMap   map[string]string
-	multiaddress  string
+	identityMap   map[peer.ID]string
+	peerID        peer.ID
 	matrixID      string
 	PbMutex       sync.Mutex
 }
@@ -31,13 +31,13 @@ type TextMessage struct {
 	From  peer.ID
 }
 
-func NewHandler(pb *pubsub.PubSub, serviceTopic, multiaddress string, networkTopics *mapset.Set) Handler {
+func NewHandler(pb *pubsub.PubSub, serviceTopic string, peerID peer.ID, networkTopics *mapset.Set) Handler {
 	return Handler{
 		pb:            pb,
 		serviceTopic:  serviceTopic,
 		networkTopics: *networkTopics,
-		identityMap:   make(map[string]string),
-		multiaddress:  multiaddress,
+		identityMap:   make(map[peer.ID]string),
+		peerID:        peerID,
 	}
 }
 
@@ -98,8 +98,8 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 				Body: "",
 				Flag: api.FlagIdentityResponse,
 			},
-			Multiaddress: h.multiaddress,
-			MatrixID:     h.matrixID,
+			PeerID:   h.peerID,
+			MatrixID: h.matrixID,
 		}
 		sendData, err := json.Marshal(respond)
 		if err != nil {
@@ -118,7 +118,7 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 			log.Println("Error occurred during unmarshalling the message data from IdentityResponse")
 			return
 		}
-		h.identityMap[respond.Multiaddress] = respond.MatrixID
+		h.identityMap[respond.PeerID] = respond.MatrixID
 	default:
 		log.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
@@ -130,7 +130,7 @@ func (h *Handler) SetMatrixID(matrixID string) {
 }
 
 // Returns copy of handler's identity map ([multiaddress]=>[matrixID])
-func (h *Handler) GetIdentityMap() map[string]string {
+func (h *Handler) GetIdentityMap() map[peer.ID]string {
 	return h.identityMap
 }
 
