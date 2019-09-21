@@ -28,7 +28,7 @@ type Handler struct {
 type TextMessage struct {
 	Topic string
 	Body  string
-	From  peer.ID
+	From  string
 }
 
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, peerID peer.ID, networkTopics *mapset.Set) Handler {
@@ -55,10 +55,15 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	switch message.Flag {
 	// Getting regular message
 	case api.FlagGenericMessage:
+		from := addr.String()
+		if h.matrixID != "" {
+			from = h.matrixID
+		}
+
 		textMessage := TextMessage{
 			Topic: topic,
 			Body:  message.Body,
-			From:  addr,
+			From:  from,
 		}
 		handleTextMessage(textMessage)
 	// Getting topic request, answer topic response
