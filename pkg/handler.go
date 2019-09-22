@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"sync"
@@ -25,9 +24,10 @@ type Handler struct {
 
 // TextMessage is more end-user model of regular text messages
 type TextMessage struct {
-	Topic string
-	Body  string
-	From  string
+	Topic        string
+	Body         string
+	FromPeerID   string
+	FromMatrixID string
 }
 
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, peerID peer.ID, networkTopics *mapset.Set) Handler {
@@ -59,23 +59,21 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	switch message.Flag {
 	// Getting regular message
 	case api.FlagGenericMessage:
-		from := addr.String()
-		if h.matrixID != "" {
-			from = h.matrixID
-		}
-
 		textMessage := TextMessage{
-			Topic: topic,
-			Body:  message.Body,
-			From:  from,
+			Topic:        topic,
+			Body:         message.Body,
+			FromPeerID:   addr.String(),
+			FromMatrixID: message.FromMatrixID,
 		}
 		handleTextMessage(textMessage)
 	// Getting topic request, answer topic response
 	case api.FlagTopicsRequest:
 		respond := &api.GetTopicsRespondMessage{
 			BaseMessage: api.BaseMessage{
-				Body: "",
-				Flag: api.FlagTopicsResponse,
+				Body:         "",
+				Flag:         api.FlagTopicsResponse,
+				FromMatrixID: h.matrixID,
+				To:           addr.String(),
 			},
 			Topics: h.GetTopics(),
 		}
@@ -104,8 +102,10 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	case api.FlagIdentityRequest:
 		respond := &api.GetIdentityRespondMessage{
 			BaseMessage: api.BaseMessage{
-				Body: "",
-				Flag: api.FlagIdentityResponse,
+				Body:         "",
+				Flag:         api.FlagIdentityResponse,
+				FromMatrixID: h.matrixID,
+				To:           addr.String(),
 			},
 			PeerID:   h.peerID,
 			MatrixID: h.matrixID,
@@ -161,27 +161,31 @@ func (h *Handler) BlacklistPeer(pid peer.ID) {
 }
 
 // Requesting topics from **other** peers
-func (h *Handler) RequestNetworkTopics(ctx context.Context) {
+func (h *Handler) RequestNetworkTopics() {
 	requestTopicsMessage := &api.BaseMessage{
-		Body: "",
-		Flag: api.FlagTopicsRequest,
+		Body:         "",
+		Flag:         api.FlagTopicsRequest,
+		To:           "",
+		FromMatrixID: h.matrixID,
 	}
 
-	h.sendMessageToServiceTopic(ctx, requestTopicsMessage)
+	h.sendMessageToServiceTopic(requestTopicsMessage)
 }
 
-// Requests MatrixID from other peers
-func (h *Handler) RequestPeersIdentity(ctx context.Context) {
+// Requests MatrixID from specific peer
+func (h *Handler) RequestPeersIdentity(peerID string) {
 	requestPeersIdentity := &api.BaseMessage{
-		Body: "",
-		Flag: api.FlagIdentityRequest,
+		Body:         "",
+		To:           peerID,
+		Flag:         api.FlagIdentityRequest,
+		FromMatrixID: h.matrixID,
 	}
 
-	h.sendMessageToServiceTopic(ctx, requestPeersIdentity)
+	h.sendMessageToServiceTopic(requestPeersIdentity)
 }
 
 // Sends marshaled message to the service topic
-func (h *Handler) sendMessageToServiceTopic(ctx context.Context, message *api.BaseMessage) {
+func (h *Handler) sendMessageToServiceTopic(message *api.BaseMessage) {
 	sendData, err := json.Marshal(message)
 	if err != nil {
 		log.Println(err.Error())

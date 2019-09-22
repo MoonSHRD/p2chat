@@ -20,9 +20,10 @@ const (
 
 // BaseMessage is the basic message format of our protocol
 type BaseMessage struct {
-	Body string `json:"body"`
-	To   string `json:"to"`
-	Flag int    `json:"flag"`
+	Body         string `json:"body"`
+	To           string `json:"to"`
+	Flag         int    `json:"flag"`
+	FromMatrixID string `json:"fromMatrixID"`
 }
 
 // GetTopicsRespondMessage is the format of the message to answer of request for topics
