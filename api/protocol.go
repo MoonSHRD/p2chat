@@ -8,7 +8,7 @@ Flags:
 		- 0x1: Request to get existing PubSub topics at the network
 		- 0x2: Response to the request for topics (ack)
 		- 0x3: Request to ask peers for their MatrixID
-		- 0x4: Response to the request for peers identity
+		- 0x4: Response to the request for MatrixID
 */
 const (
 	FlagGenericMessage   int = 0x0
@@ -21,6 +21,7 @@ const (
 // BaseMessage is the basic message format of our protocol
 type BaseMessage struct {
 	Body string `json:"body"`
+	To   string `json:"to"`
 	Flag int    `json:"flag"`
 }
 

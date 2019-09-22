@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/MoonSHRD/p2chat/api"
 	mapset "github.com/deckarep/golang-set"
@@ -52,6 +51,11 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		log.Println("Error occurred during unmarshalling the base message data")
 		return
 	}
+
+	if message.To != "" && message.To != string(h.peerID) {
+		return // Drop message, because it is not for us
+	}
+
 	switch message.Flag {
 	// Getting regular message
 	case api.FlagGenericMessage:
@@ -184,18 +188,7 @@ func (h *Handler) sendMessageToServiceTopic(ctx context.Context, message *api.Ba
 		return
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		h.PbMutex.Lock()
-		h.pb.Publish(h.serviceTopic, sendData)
-		h.PbMutex.Unlock()
-	}
+	h.PbMutex.Lock()
+	h.pb.Publish(h.serviceTopic, sendData)
+	h.PbMutex.Unlock()
 }
