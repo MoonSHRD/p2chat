@@ -24,10 +24,10 @@ type Handler struct {
 
 // TextMessage is more end-user model of regular text messages
 type TextMessage struct {
-	Topic        string
-	Body         string
-	FromPeerID   string
-	FromMatrixID string
+	Topic        string `json:"topic"`
+	Body         string `json:"body"`
+	FromPeerID   string `json:"fromPeerID"`
+	FromMatrixID string `json:"fromMatrixID"`
 }
 
 func NewHandler(pb *pubsub.PubSub, serviceTopic string, peerID peer.ID, networkTopics *mapset.Set) Handler {
@@ -106,6 +106,8 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	case api.FlagGreeting:
 		handleMatch(topic, fromPeerID.String(), message.FromMatrixID)
 		h.sendIdentityResponse(topic, fromPeerID.String())
+	case api.FlagGreetingRespond:
+		handleMatch(topic, fromPeerID.String(), message.FromMatrixID)
 	case api.FlagFarewell:
 		handleUnmatch(topic, fromPeerID.String(), message.FromMatrixID)
 	default:
