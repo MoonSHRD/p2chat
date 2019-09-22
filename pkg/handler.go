@@ -40,7 +40,7 @@ func NewHandler(pb *pubsub.PubSub, serviceTopic string, peerID peer.ID, networkT
 	}
 }
 
-func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handleTextMessage func(TextMessage), handleMatch func(string, string), handleUnmatch func(string, string)) {
+func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handleTextMessage func(TextMessage), handleMatch func(string, string, string), handleUnmatch func(string, string, string)) {
 	fromPeerID, err := peer.IDFromBytes(msg.From)
 	if err != nil {
 		log.Println("Error occurred when reading message from field...")
@@ -104,10 +104,10 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 	case api.FlagIdentityResponse:
 		h.identityMap[peer.ID(fromPeerID.String())] = message.FromMatrixID
 	case api.FlagGreeting:
-		handleMatch(topic, message.FromMatrixID)
+		handleMatch(topic, fromPeerID.String(), message.FromMatrixID)
 		h.sendIdentityResponse(topic, fromPeerID.String())
 	case api.FlagFarewell:
-		handleUnmatch(topic, message.FromMatrixID)
+		handleUnmatch(topic, fromPeerID.String(), message.FromMatrixID)
 	default:
 		log.Printf("\nUnknown message type: %#x\n", message.Flag)
 	}
