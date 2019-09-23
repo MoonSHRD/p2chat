@@ -52,7 +52,8 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		return
 	}
 
-	if message.To != "" && message.To != string(h.peerID) {
+	ourPeerID, err := peer.IDFromString(string(h.peerID))
+	if message.To != "" && message.To != ourPeerID.String() {
 		return // Drop message, because it is not for us
 	}
 
@@ -105,9 +106,11 @@ func (h *Handler) HandleIncomingMessage(topic string, msg pubsub.Message, handle
 		h.identityMap[peer.ID(fromPeerID.String())] = message.FromMatrixID
 	case api.FlagGreeting:
 		handleMatch(topic, fromPeerID.String(), message.FromMatrixID)
+		log.Println("Greetings from " + fromPeerID.String() + " in topic " + topic)
 		h.sendIdentityResponse(topic, fromPeerID.String())
 	case api.FlagGreetingRespond:
 		handleMatch(topic, fromPeerID.String(), message.FromMatrixID)
+		log.Println("Greeting respond from " + fromPeerID.String() + ":" + message.FromMatrixID + " in topic " + topic)
 	case api.FlagFarewell:
 		handleUnmatch(topic, fromPeerID.String(), message.FromMatrixID)
 	default:
