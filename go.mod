@@ -1,8 +1,9 @@
-module github.com/MoonSHRD/p2chat
+module github.com/MoonSHRD/p2chat/v2
 
 go 1.12
 
 require (
+	github.com/MoonSHRD/p2chat v1.2.7
 	github.com/deckarep/golang-set v1.7.1
 	github.com/libp2p/go-libp2p v0.2.0
 	github.com/libp2p/go-libp2p-core v0.0.6

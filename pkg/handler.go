@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/MoonSHRD/p2chat/api"
+	"github.com/MoonSHRD/p2chat/v2/api"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"

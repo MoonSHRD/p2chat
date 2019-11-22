@@ -15,8 +15,8 @@ import (
 
 	"time"
 
-	"github.com/MoonSHRD/p2chat/api"
-	"github.com/MoonSHRD/p2chat/pkg"
+	"github.com/MoonSHRD/p2chat/v2/api"
+	pkg "github.com/MoonSHRD/p2chat/v2/pkg"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"

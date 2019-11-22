@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MoonSHRD/p2chat/api"
-	"github.com/MoonSHRD/p2chat/pkg"
+	"github.com/MoonSHRD/p2chat/v2/api"
+	"github.com/MoonSHRD/p2chat/v2/pkg"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
